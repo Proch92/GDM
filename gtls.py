@@ -9,6 +9,7 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 def import_network(file_name, NetworkClass):
     """ Import pickled network from file
     """
@@ -18,7 +19,8 @@ def import_network(file_name, NetworkClass):
     net = NetworkClass()
     net.__dict__ = pickle.loads(data_pickle)
     return net
-    
+
+
 def export_network(file_name, net) -> None:
     """ Export pickled network to file
     """
@@ -26,12 +28,14 @@ def export_network(file_name, net) -> None:
     file.write(pickle.dumps(net.__dict__))
     file.close()
 
+
 def load_file(file_name) -> np.ndarray:
     """ Load dataset from file
     """
     reader = csv.reader(open(file_name, "r"), delimiter=',')
     x_rdr = list(reader)
-    return  np.array(x_rdr).astype('float')
+    return np.array(x_rdr).astype('float')
+
 
 def normalize_data(data) -> np.ndarray:
     """ Normalize data vectors
@@ -43,62 +47,68 @@ def normalize_data(data) -> np.ndarray:
             data[j, i] = (data[j, i] - min_col) / (max_col - min_col)
     return data
 
+
 def plot_network(net, edges, labels) -> None:
     """ 2D plot
-    """        
+    """
     # Plot network
     # This just plots the first two dimensions of the weight vectors.
     # For better visualization, PCA over weight vectors must be performed.
-    ccc = ['black','blue','red','green','yellow','cyan','magenta','0.75','0.15','1']
+    ccc = ['black', 'blue', 'red', 'green', 'yellow',
+           'cyan', 'magenta', '0.75', '0.15', '1']
     plt.figure()
     dim_net = True if len(net.weights[0].shape) < 2 else False
     for ni in range(len(net.weights)):
         plindex = np.argmax(net.alabels[ni])
         if labels:
             if dim_net:
-                plt.scatter(net.weights[ni][0], net.weights[ni][1], color=ccc[plindex], alpha=.5)
+                plt.scatter(net.weights[ni][0], net.weights[ni]
+                            [1], color=ccc[plindex], alpha=.5)
             else:
-                plt.scatter(net.weights[ni][0, 0], net.weights[ni][0, 1], color=ccc[plindex], alpha=.5)
+                plt.scatter(net.weights[ni][0, 0], net.weights[ni]
+                            [0, 1], color=ccc[plindex], alpha=.5)
         else:
             if dim_net:
                 plt.scatter(net.weights[ni][0], net.weights[ni][1], alpha=.5)
             else:
-                plt.scatter(net.weights[ni][0, 0], net.weights[ni][0, 1], alpha=.5)
+                plt.scatter(net.weights[ni][0, 0],
+                            net.weights[ni][0, 1], alpha=.5)
         if edges:
             for nj in range(len(net.weights)):
-                if  net.edges[ni, nj] > 0:
+                if net.edges[ni, nj] > 0:
                     if dim_net:
-                        plt.plot([net.weights[ni][0], net.weights[nj][0]], 
+                        plt.plot([net.weights[ni][0], net.weights[nj][0]],
                                  [net.weights[ni][1], net.weights[nj][1]],
                                  'gray', alpha=.3)
                     else:
-                        plt.plot([net.weights[ni][0, 0], net.weights[nj][0, 0]], 
+                        plt.plot([net.weights[ni][0, 0], net.weights[nj][0, 0]],
                                  [net.weights[ni][0, 1], net.weights[nj][0, 1]],
-                                 'gray', alpha=.3)                        
+                                 'gray', alpha=.3)
     plt.show()
+
 
 class IrisDataset:
     """ Create an instance of Iris dataset
     """
+
     def __init__(self, file, normalize):
         self.name = 'IRIS'
         self.file = file
         self.normalize = normalize
         self.num_classes = 3
-        
+
         raw_data = load_file(self.file)
-        
-        self.labels = raw_data[:, raw_data.shape[1]-1]
-        self.vectors = raw_data[:, 0:raw_data.shape[1]-1]
-        
+
+        self.labels = raw_data[:, raw_data.shape[1] - 1]
+        self.vectors = raw_data[:, 0:raw_data.shape[1] - 1]
+
         label_list = list()
         for label in self.labels:
             if label not in label_list:
                 label_list.append(label)
         n_classes = len(label_list)
-        
+
         assert self.num_classes == n_classes, "Inconsistent number of classes"
-        
+
         if self.normalize:
             self.vectors = normalize_data(self.vectors)
-                
