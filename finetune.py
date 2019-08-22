@@ -2,15 +2,14 @@ import tensorflow as tf
 import numpy as np
 
 
-BATCH_SIZE = 16
-SPLIT_SIZE = BATCH_SIZE * 10
+BATCH_SIZE = 32
+SPLIT_SIZE = BATCH_SIZE * 100
 EPOCHS = 10
 
 # load and preprocess images
-core50_5fps = np.load('5fps.npz')
+core50_5fps = np.load('core50/5fps.npz')
 imgs = core50_5fps['x']
 labels = core50_5fps['y']
-del core50_5fps
 num_classes = 50
 
 # create new model
@@ -22,18 +21,25 @@ vgg.trainable = False
 extractor = tf.keras.Sequential([
     vgg,
     tf.keras.layers.GlobalAveragePooling2D(),
-    tf.keras.layers.Dense(256)
+    tf.keras.layers.Dense(256, activation='relu')
 ])
 
 supervised = tf.keras.Sequential([
     extractor,
-    tf.keras.layers.Dense(num_classes)
+    tf.keras.layers.Dropout(0.2),
+    tf.keras.layers.Dense(num_classes, activation='softmax')
 ])
+
+vgg.summary()
+extractor.summary()
+supervised.summary()
 
 supervised.compile(
     optimizer=tf.keras.optimizers.RMSprop(),
     loss='categorical_crossentropy',
     metrics=['accuracy'])
+
+print(len(supervised.trainable_variables))
 
 # shuffle
 indexes = np.arange(len(labels))
@@ -50,4 +56,4 @@ for epoch in range(EPOCHS):
 
         supervised.fit(batch_x, batch_y, batch_size=BATCH_SIZE, epochs=1)
 
-extractor.save('extractor.tf')
+extractor.save('extractor2.tf')

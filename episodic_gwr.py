@@ -25,7 +25,7 @@ class EpisodicGWR(GammaGWR):
 
         # Start with 2 neurons
         self.num_nodes = 2
-        self.dimension = ds.vectors.shape[1]
+        self.dimension = ds.shape[1]
         self.num_context = num_context
         self.depth = self.num_context + 1
         empty_neuron = np.zeros((self.depth, self.dimension))
@@ -41,6 +41,7 @@ class EpisodicGWR(GammaGWR):
         self.edges = np.ones((self.num_nodes, self.num_nodes))
         self.ages = np.zeros((self.num_nodes, self.num_nodes))
 
+        # new --------------------------------
         # Temporal connections
         self.temporal = np.zeros((self.num_nodes, self.num_nodes))
 
@@ -51,11 +52,15 @@ class EpisodicGWR(GammaGWR):
             self.alabels.append(-np.ones((self.num_nodes, self.num_labels[l])))
         init_ind = list(range(0, self.num_nodes))
         for i in range(0, len(init_ind)):
-            self.weights[i][0] = ds.vectors[i]
+            self.weights[i][0] = ds[i]
 
         # Context coefficients
         self.alphas = self.compute_alphas(self.depth)
 
+    # par 3.2 episodic memory
+    # hebbian update temporal synaptic link
+    # empowering link from previous_ind (t-1) to current_ind (t)
+    # used to produce temporal trajectories
     def update_temporal(self, current_ind, previous_ind, **kwargs) -> None:
         new_node = kwargs.get('new_node', False)
         if new_node:
