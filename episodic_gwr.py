@@ -147,6 +147,9 @@ class EpisodicGWR(GammaGWR):
         previous_ind = -1
         for epoch in range(0, self.max_epochs):
             for iteration in range(0, self.samples):
+                if self.iterations % 100 == 0:
+                    print('epoch: {} / {} - {:.2f}%'.format(epoch + 1, self.max_epochs, (iteration / self.samples) * 100), end='')
+                    print('\r', end='')
 
                 # Generate input sample
                 self.g_context[0] = ds_vectors[iteration]
@@ -270,6 +273,7 @@ class EpisodicGWR(GammaGWR):
             self.test_accuracy = acc_counter / ds_vectors.shape[0]
 
         if test_vecs:
-            s_labels = -np.ones((1, test_samples))
-            s_labels[0] = self.bmus_label[1]
+            s_labels = -np.ones((len(self.num_labels), test_samples))
+            for l in range(len(self.num_labels)):
+                s_labels[l] = self.bmus_label[l]
             return self.bmus_weight, s_labels

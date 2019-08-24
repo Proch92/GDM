@@ -7,7 +7,7 @@ pkl_file = open('core50/paths.pkl', 'rb')
 paths = pkl.load(pkl_file)
 paths = paths[::4]
 
-instance = [int(re.search('/o(.+?)/', path).group(1)) for path in paths]
+instance = [int(re.search('/o(.+?)/', path).group(1)) - 1 for path in paths]
 session = [int(re.search('s(.+?)/', path).group(1)) for path in paths]
 category = [int((i - 1) / 5.0) for i in instance]
 

@@ -7,6 +7,8 @@ Dual-memory Incremental learning with memory replay
 """
 
 import numpy as np
+import pandas as pd
+import random
 from episodic_gwr import EpisodicGWR
 
 
@@ -37,17 +39,30 @@ if __name__ == "__main__":
     core50_instances = core50['instance']
     core50_categories = core50['category']
     core50_sessions = core50['session']
+
     assert len(np.unique(core50_instances)) == 50, "number of unique instances != 50"
     assert len(np.unique(core50_categories)) == 10, "number of unique categories != 10"
     assert len(np.unique(core50_sessions)) == 11, "number of sessions != 11"
     assert len(core50_x) == len(core50_categories) == len(core50_categories) == len(core50_sessions), "wrong number of samples and labels"
 
-    train_x = [sample for i, sample in enumerate(core50_x) if core50_sessions[i] not in [3, 7, 10]]
-    train_instances = [instance for i, instance in enumerate(core50_instances) if core50_sessions[i] not in [3, 7, 10]]
-    train_categories = [category for i, category in enumerate(core50_categories) if core50_sessions[i] not in [3, 7, 10]]
-    test_x = [sample for i, sample in enumerate(core50_x) if core50_sessions[i] in [3, 7, 10]]
-    test_instances = [instance for i, instance in enumerate(core50_instances) if core50_sessions[i] in [3, 7, 10]]
-    test_categories = [category for i, category in enumerate(core50_categories) if core50_sessions[i] in [3, 7, 10]]
+    ds = pd.DataFrame({
+        'x': range(len(core50_x)),
+        'instance': core50_instances,
+        'category': core50_categories,
+        'session': core50_sessions
+    })
+
+    test = ds[ds['session'].isin([3, 7, 10])]
+    train = ds[ds['session'].isin([1, 2, 4, 5, 6, 8, 9, 11])]
+
+    # train_x = np.array([sample for i, sample in enumerate(core50_x) if core50_sessions[i] not in [3, 7, 10]])
+    # train_instances = np.array([instance for i, instance in enumerate(core50_instances) if core50_sessions[i] not in [3, 7, 10]])
+    # train_categories = np.array([category for i, category in enumerate(core50_categories) if core50_sessions[i] not in [3, 7, 10]])
+    # train_sessions = np.array([session for session in core50_sessions if session not in [3, 7, 10]])
+    # test_x = np.array([sample for i, sample in enumerate(core50_x) if core50_sessions[i] in [3, 7, 10]])
+    # test_instances = np.array([instance for i, instance in enumerate(core50_instances) if core50_sessions[i] in [3, 7, 10]])
+    # test_categories = np.array([category for i, category in enumerate(core50_categories) if core50_sessions[i] in [3, 7, 10]])
+    # test_sessions = np.array([session for session in core50_sessions if session in [3, 7, 10]])
 
     assert train_type < 4, "Invalid type of training."
 
@@ -61,9 +76,6 @@ if __name__ == "__main__":
     '''
     e_labels = [50, 10]
     s_labels = [50, 10]
-    ds_labels = np.zeros((len(e_labels), len(train_instances)))
-    ds_labels[0] = train_instances
-    ds_labels[1] = train_categories
 
     num_context = 2  # number of context descriptors
     epochs = 1  # epochs per sample for incremental learning
@@ -73,20 +85,26 @@ if __name__ == "__main__":
     context = True
 
     g_episodic = EpisodicGWR()
-    g_episodic.init_network(train_x, e_labels, num_context)
+    g_episodic.init_network(core50_x[train['x'].values], e_labels, num_context)
 
     g_semantic = EpisodicGWR()
-    g_semantic.init_network(train_x, s_labels, num_context)
+    g_semantic.init_network(core50_x[train['x'].values], s_labels, num_context)
 
     if train_type == 0:
         # Batch training
         # Train episodic memory
-        g_episodic.train_egwr(train_x, ds_labels, 7, a_threshold[0], beta, learning_rates, context, regulated=0)
+        x = core50_x[train['x'].values]
+        ds_labels = np.zeros((len(e_labels), len(train)))
+        ds_labels[0] = train['instance'].values
+        ds_labels[1] = train['category'].values
 
-        e_weights, e_labels = g_episodic.test(train_x, ds_labels, ret_vecs=True)
+        g_episodic.train_egwr(x, ds_labels, 7, a_threshold[0], beta, learning_rates, context, regulated=0)
+
+        e_weights, eval_labels = g_episodic.test(x, ds_labels, ret_vecs=True)
         # Train semantic memory
-        g_semantic.train_egwr(e_weights, e_labels, 7, a_threshold[1], beta, learning_rates, context, regulated=1)
-    elif train_type == 1:
+        g_semantic.train_egwr(e_weights, eval_labels, 7, a_threshold[1], beta, learning_rates, context, regulated=1)
+
+    else:
         # Incremental training New Instance NI
         n_episodes = 0
         batch_size = 10  # number of samples per epoch
@@ -95,19 +113,38 @@ if __name__ == "__main__":
         replay_weights = []
         replay_labels = []
 
+        # prepare batches
+        if train_type == 1:  # NI
+            batches = train.groupby('session')
+        elif train_type == 2:  # NC
+            batches = train.groupby('category')
+            batches = [batch for _, batch in batches]
+            batches[0] = pd.concat([batches[0], batches[1]])
+            del batches[1]
+        elif train_type == 3:  # NIC
+            batches = train.groupby('instance')
+            batches = [batch for _, batch in batches]
+            batches = random.shuffle(batches)
+            while(batches[0]['category'].values[0] == batches[1]['category'].values[0]):
+                batches = random.shuffle(batches)
+
         # Train episodic memory
-        for s in range(0, train_x.shape[0], batch_size):
-            print("batch: ({} - {})".format(s, s + batch_size))
-            g_episodic.train_egwr(train_x[s:s + batch_size],
-                                  ds_labels[:, s:s + batch_size],
+        for _, batch in batches:
+            # prepare labels
+            ds_labels = np.zeros((len(e_labels), len(batch)))
+            ds_labels[0] = batch['instance'].values
+            ds_labels[1] = batch['category'].values
+
+            g_episodic.train_egwr(batch['x'].values,
+                                  ds_labels,
                                   epochs, a_threshold[0], beta, learning_rates,
                                   context, regulated=0)
 
-            e_weights, e_labels = g_episodic.test(train_x, ds_labels,
-                                                  ret_vecs=True)
+            e_weights, eval_labels = g_episodic.test(train['x'].values, ds_labels, ret_vecs=True)
+
             # Train semantic memory
-            g_semantic.train_egwr(e_weights[s:s + batch_size],
-                                  e_labels[:, s:s + batch_size],
+            g_semantic.train_egwr(e_weights,
+                                  eval_labels,
                                   epochs, a_threshold[1], beta, learning_rates,
                                   context, regulated=1)
 
@@ -128,7 +165,11 @@ if __name__ == "__main__":
 
             n_episodes += 1
 
-    e_weights, e_labels = g_episodic.test(test_x, ds_labels, test_accuracy=True, ret_vecs=True)
+    # TEST
+    ds_labels = np.zeros((len(e_labels), len(test)))
+    ds_labels[0] = test['instance'].values
+    ds_labels[1] = test['category'].values
+    e_weights, e_labels = g_episodic.test(test['x'].values, ds_labels, test_accuracy=True, ret_vecs=True)
     g_semantic.test(e_weights, e_labels, test_accuracy=True)
 
     print("Accuracy episodic: %s, semantic: %s" % (g_episodic.test_accuracy[0], g_semantic.test_accuracy[0]))
