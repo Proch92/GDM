@@ -9,6 +9,7 @@ Dual-memory Incremental learning with memory replay
 import numpy as np
 import pandas as pd
 import random
+import sys
 from episodic_gwr import EpisodicGWR
 
 
@@ -29,9 +30,13 @@ def replay_samples(net, size) -> (np.ndarray, np.ndarray):
 
 
 if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print('usage: python ' + sys.argv[0] + ' train_type')
+        print('train_type -> 0: Batch, 1: NI, 2: NC, 3: NIC')
+        exit(0)
 
     train_flag = True
-    train_type = 1  # 0: Batch, 1: NI, 2: NC, 3: NIC
+    train_type = int(sys.argv[1])  # 0: Batch, 1: NI, 2: NC, 3: NIC
     train_replay = True
 
     core50 = np.load('core50/5fps_256.npz')
@@ -116,6 +121,7 @@ if __name__ == "__main__":
         # prepare batches
         if train_type == 1:  # NI
             batches = train.groupby('session')
+            batches = [batch for _, batch in batches]
         elif train_type == 2:  # NC
             batches = train.groupby('category')
             batches = [batch for _, batch in batches]
@@ -124,12 +130,17 @@ if __name__ == "__main__":
         elif train_type == 3:  # NIC
             batches = train.groupby('instance')
             batches = [batch for _, batch in batches]
-            batches = random.shuffle(batches)
+            random.shuffle(batches)
             while(batches[0]['category'].values[0] == batches[1]['category'].values[0]):
-                batches = random.shuffle(batches)
+                random.shuffle(batches)
+            batches[0] = pd.concat([batches[0], batches[1]])
+            del batches[1]
 
+        ds_labels_train = np.zeros((len(e_labels), len(train)))
+        ds_labels_train[0] = train['instance'].values
+        ds_labels_train[1] = train['category'].values
         # Train episodic memory
-        for _, batch in batches:
+        for batch in batches:
             # prepare labels
             ds_labels = np.zeros((len(e_labels), len(batch)))
             ds_labels[0] = batch['instance'].values
@@ -140,7 +151,12 @@ if __name__ == "__main__":
                                   epochs, a_threshold[0], beta, learning_rates,
                                   context, regulated=0)
 
-            e_weights, eval_labels = g_episodic.test(train['x'].values, ds_labels, ret_vecs=True)
+            e_weights, eval_labels = g_episodic.test(train['x'].values, ds_labels_train, ret_vecs=True)
+
+            # diff_w = np.mean(e_weights - e_weights_1[0:len(batch['x'].values)])
+            # diff_l = len(np.nonzero(eval_labels - eval_labels_1[:, 0:len(batch['x'].values)]))
+            # print(diff_w)
+            # print(diff_l)
 
             # Train semantic memory
             g_semantic.train_egwr(e_weights,
@@ -169,7 +185,7 @@ if __name__ == "__main__":
     ds_labels = np.zeros((len(e_labels), len(test)))
     ds_labels[0] = test['instance'].values
     ds_labels[1] = test['category'].values
-    e_weights, e_labels = g_episodic.test(test['x'].values, ds_labels, test_accuracy=True, ret_vecs=True)
-    g_semantic.test(e_weights, e_labels, test_accuracy=True)
+    e_weights, eval_labels = g_episodic.test(test['x'].values, ds_labels, test_accuracy=True, ret_vecs=True)
+    g_semantic.test(e_weights, eval_labels, test_accuracy=True)
 
     print("Accuracy episodic: %s, semantic: %s" % (g_episodic.test_accuracy[0], g_semantic.test_accuracy[0]))
