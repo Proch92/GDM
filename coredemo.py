@@ -83,7 +83,7 @@ if __name__ == "__main__":
     s_labels = [50, 10]
 
     num_context = 2  # number of context descriptors
-    epochs = 2  # epochs per sample for incremental learning
+    epochs = 3  # epochs per sample for incremental learning
     a_threshold = [0.3, 0.001]
     beta = 0.7
     learning_rates = [0.5, 0.005]
@@ -183,4 +183,5 @@ if __name__ == "__main__":
     e_weights, eval_labels = g_episodic.test(core50_x[test['x'].values], ds_labels, test_accuracy=True, ret_vecs=True)
     g_semantic.test(e_weights, eval_labels, test_accuracy=True)
 
-    print("Accuracy episodic: %s, semantic: %s" % (g_episodic.test_accuracy[0], g_semantic.test_accuracy[0]))
+    print("Accuracy instance episodic: %s, semantic: %s" % (g_episodic.test_accuracy[0], g_semantic.test_accuracy[0]))
+    print("Accuracy category episodic: %s, semantic: %s" % (g_episodic.test_accuracy[1], g_semantic.test_accuracy[1]))
