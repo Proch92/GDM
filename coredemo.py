@@ -83,7 +83,7 @@ if __name__ == "__main__":
     s_labels = [50, 10]
 
     num_context = 2  # number of context descriptors
-    epochs = 1  # epochs per sample for incremental learning
+    epochs = 2  # epochs per sample for incremental learning
     a_threshold = [0.3, 0.001]
     beta = 0.7
     learning_rates = [0.5, 0.005]
@@ -103,11 +103,11 @@ if __name__ == "__main__":
         ds_labels[0] = train['instance'].values
         ds_labels[1] = train['category'].values
 
-        g_episodic.train_egwr(x, ds_labels, 7, a_threshold[0], beta, learning_rates, context, regulated=0)
+        g_episodic.train_egwr(x, ds_labels, epochs, a_threshold[0], beta, learning_rates, context, regulated=0)
 
         e_weights, eval_labels = g_episodic.test(x, ds_labels, ret_vecs=True)
         # Train semantic memory
-        g_semantic.train_egwr(e_weights, eval_labels, 7, a_threshold[1], beta, learning_rates, context, regulated=1)
+        g_semantic.train_egwr(e_weights, eval_labels, epochs, a_threshold[1], beta, learning_rates, context, regulated=1)
 
     else:
         # Incremental training New Instance NI
@@ -146,17 +146,12 @@ if __name__ == "__main__":
             ds_labels[0] = batch['instance'].values
             ds_labels[1] = batch['category'].values
 
-            g_episodic.train_egwr(batch['x'].values,
+            g_episodic.train_egwr(core50_x[batch['x'].values],
                                   ds_labels,
                                   epochs, a_threshold[0], beta, learning_rates,
                                   context, regulated=0)
 
-            e_weights, eval_labels = g_episodic.test(train['x'].values, ds_labels_train, ret_vecs=True)
-
-            # diff_w = np.mean(e_weights - e_weights_1[0:len(batch['x'].values)])
-            # diff_l = len(np.nonzero(eval_labels - eval_labels_1[:, 0:len(batch['x'].values)]))
-            # print(diff_w)
-            # print(diff_l)
+            e_weights, eval_labels = g_episodic.test(core50_x[batch['x'].values], ds_labels, ret_vecs=True)
 
             # Train semantic memory
             g_semantic.train_egwr(e_weights,
@@ -185,7 +180,7 @@ if __name__ == "__main__":
     ds_labels = np.zeros((len(e_labels), len(test)))
     ds_labels[0] = test['instance'].values
     ds_labels[1] = test['category'].values
-    e_weights, eval_labels = g_episodic.test(test['x'].values, ds_labels, test_accuracy=True, ret_vecs=True)
+    e_weights, eval_labels = g_episodic.test(core50_x[test['x'].values], ds_labels, test_accuracy=True, ret_vecs=True)
     g_semantic.test(e_weights, eval_labels, test_accuracy=True)
 
     print("Accuracy episodic: %s, semantic: %s" % (g_episodic.test_accuracy[0], g_semantic.test_accuracy[0]))
