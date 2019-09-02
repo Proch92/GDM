@@ -37,7 +37,6 @@ if __name__ == "__main__":
 
     train_flag = True
     train_type = int(sys.argv[1])  # 0: Batch, 1: NI, 2: NC, 3: NIC
-    train_replay = True
 
     core50 = np.load('core50/5fps_256.npz')
     core50_x = core50['features']
@@ -60,15 +59,6 @@ if __name__ == "__main__":
     test = ds[ds['session'].isin([3, 7, 10])]
     train = ds[ds['session'].isin([1, 2, 4, 5, 6, 8, 9, 11])]
 
-    # train_x = np.array([sample for i, sample in enumerate(core50_x) if core50_sessions[i] not in [3, 7, 10]])
-    # train_instances = np.array([instance for i, instance in enumerate(core50_instances) if core50_sessions[i] not in [3, 7, 10]])
-    # train_categories = np.array([category for i, category in enumerate(core50_categories) if core50_sessions[i] not in [3, 7, 10]])
-    # train_sessions = np.array([session for session in core50_sessions if session not in [3, 7, 10]])
-    # test_x = np.array([sample for i, sample in enumerate(core50_x) if core50_sessions[i] in [3, 7, 10]])
-    # test_instances = np.array([instance for i, instance in enumerate(core50_instances) if core50_sessions[i] in [3, 7, 10]])
-    # test_categories = np.array([category for i, category in enumerate(core50_categories) if core50_sessions[i] in [3, 7, 10]])
-    # test_sessions = np.array([session for session in core50_sessions if session in [3, 7, 10]])
-
     assert train_type < 4, "Invalid type of training."
 
     '''
@@ -82,12 +72,12 @@ if __name__ == "__main__":
     e_labels = [50, 10]
     s_labels = [50, 10]
 
+    context = True
     num_context = 2  # number of context descriptors
     epochs = 3  # epochs per sample for incremental learning
     a_threshold = [0.3, 0.001]
     beta = 0.7
     learning_rates = [0.5, 0.005]
-    context = True
 
     g_episodic = EpisodicGWR()
     g_episodic.init_network(core50_x[train['x'].values], e_labels, num_context)
@@ -97,6 +87,8 @@ if __name__ == "__main__":
 
     if train_type == 0:
         # Batch training
+        context = False
+        num_context = 0  # number of context descriptors
         # Train episodic memory
         x = core50_x[train['x'].values]
         ds_labels = np.zeros((len(e_labels), len(train)))
@@ -111,12 +103,14 @@ if __name__ == "__main__":
 
     else:
         # Incremental training New Instance NI
-        n_episodes = 0
         batch_size = 10  # number of samples per epoch
         # Replay parameters
+        train_replay = True
         replay_size = (num_context * 2) + 1  # size of RNATs
         replay_weights = []
         replay_labels = []
+
+        n_episodes = 0
 
         # prepare batches
         if train_type == 1:  # NI
