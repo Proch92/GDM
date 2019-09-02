@@ -83,7 +83,7 @@ if __name__ == "__main__":
     s_labels = [50, 10]
 
     num_context = 2  # number of context descriptors
-    epochs = 1  # epochs per sample for incremental learning
+    epochs = 5  # epochs per sample for incremental learning
     a_threshold = [0.3, 0.001]
     beta = 0.7
     learning_rates = [0.5, 0.005]
@@ -140,6 +140,7 @@ if __name__ == "__main__":
         ds_labels_train[0] = train['instance'].values
         ds_labels_train[1] = train['category'].values
         # Train episodic memory
+
         for batch in batches:
             # prepare labels
             ds_labels = np.zeros((len(e_labels), len(batch)))
@@ -151,7 +152,7 @@ if __name__ == "__main__":
                                   epochs, a_threshold[0], beta, learning_rates,
                                   context, regulated=0)
 
-            e_weights, eval_labels = g_episodic.test(train['x'].values, ds_labels_train, ret_vecs=True)
+            e_weights, eval_labels = g_episodic.test(batch['x'].values, ds_labels, ret_vecs=True)
 
             # diff_w = np.mean(e_weights - e_weights_1[0:len(batch['x'].values)])
             # diff_l = len(np.nonzero(eval_labels - eval_labels_1[:, 0:len(batch['x'].values)]))
