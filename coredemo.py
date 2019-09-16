@@ -23,9 +23,9 @@ def replay_samples(net, size) -> (np.ndarray, np.ndarray):
                 samples[r] = i
             else:
                 samples[r] = np.argmax(net.temporal[int(samples[r - 1]), :])
-            r_weights[i][r] = net.weights[int(samples[r])][0]
+            r_weights[i, r] = net.weights[int(samples[r])][0]
             for l in range(0, len(net.num_labels)):
-                r_labels[i][l][r] = np.argmax(net.alabels[l][int(samples[r])])
+                r_labels[i, l, r] = np.argmax(net.alabels[l][int(samples[r])])
     return r_weights, r_labels
 
 
@@ -74,7 +74,7 @@ if __name__ == "__main__":
 
     context = True
     num_context = 2  # number of context descriptors
-    epochs = 3  # epochs per sample for incremental learning
+    epochs = 2  # epochs per sample for incremental learning
     a_threshold = [0.3, 0.001]
     beta = 0.7
     learning_rates = [0.5, 0.005]

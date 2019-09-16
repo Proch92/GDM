@@ -1,16 +1,27 @@
 import tensorflow as tf
 import numpy as np
+import pandas as pd
+import math
 
 
 BATCH_SIZE = 32
 SPLIT_SIZE = BATCH_SIZE * 100
-EPOCHS = 10
+EPOCHS = 20
+num_classes = 50
 
 # load and preprocess images
-core50_5fps = np.load('core50/5fps.npz')
-imgs = core50_5fps['x']
-labels = core50_5fps['y']
-num_classes = 50
+with np.load('core50/core50_imgs_5fps.npz') as core50_5fps:
+    imgs = core50_5fps['x']
+    instance = core50_5fps['instance']
+    session = core50_5fps['session']
+
+ds = pd.DataFrame({
+    'x': range(len(imgs)),
+    'instance': instance,
+    'session': session
+})
+
+train = ds[ds['session'].isin([1, 2, 4, 5, 6, 8, 9, 11])]
 
 # create new model
 SHAPE = (128, 128, 3)
@@ -20,14 +31,14 @@ vgg.trainable = False
 
 extractor = tf.keras.Sequential([
     vgg,
-    tf.keras.layers.GlobalAveragePooling2D(),
-    tf.keras.layers.Dense(256, activation='relu')
+    tf.keras.layers.Conv2D(256, [4, 4])
 ])
 
 supervised = tf.keras.Sequential([
     extractor,
     tf.keras.layers.Dropout(0.2),
-    tf.keras.layers.Dense(num_classes, activation='softmax')
+    tf.keras.layers.Conv2D(num_classes, [1, 1], activation='softmax'),
+    tf.keras.layers.Flatten()
 ])
 
 vgg.summary()
@@ -39,21 +50,21 @@ supervised.compile(
     loss='categorical_crossentropy',
     metrics=['accuracy'])
 
-print(len(supervised.trainable_variables))
-
-# shuffle
-indexes = np.arange(len(labels))
-np.random.shuffle(indexes)
-
 # training
 for epoch in range(EPOCHS):
     print('--------------------- epoch: {}/{} ----------------'.format(epoch, EPOCHS))
-    for batch_idx in [indexes[x: x + SPLIT_SIZE] for x in range(0, len(indexes), SPLIT_SIZE)]:
-        batch_x = imgs[batch_idx]
+
+    # shuffle data
+    train = train.sample(frac=1)
+
+    for split in np.array_split(train, math.ceil(len(train) / SPLIT_SIZE)):
+        split_indexes = split['x'].values
+        batch_x = imgs[split_indexes]
         batch_x = batch_x / 255.0
 
-        batch_y = labels[batch_idx]
+        batch_y = split['instance'].values
+        batch_y = tf.keras.utils.to_categorical(batch_y, num_classes=num_classes)
 
         supervised.fit(batch_x, batch_y, batch_size=BATCH_SIZE, epochs=1)
 
-extractor.save('extractor2.tf')
+extractor.save('extractor3linear.tf')
