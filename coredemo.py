@@ -38,11 +38,11 @@ if __name__ == "__main__":
     train_flag = True
     train_type = int(sys.argv[1])  # 0: Batch, 1: NI, 2: NC, 3: NIC
 
-    core50 = np.load('core50/5fps_256.npz')
-    core50_x = core50['features']
-    core50_instances = core50['instance']
-    core50_categories = core50['category']
-    core50_sessions = core50['session']
+    with np.load('core50/core50_imgs_5fps.npz') as core50:
+        core50_x = core50['x']
+        core50_instances = core50['instance']
+        core50_categories = core50['category']
+        core50_sessions = core50['session']
 
     assert len(np.unique(core50_instances)) == 50, "number of unique instances != 50"
     assert len(np.unique(core50_categories)) == 10, "number of unique categories != 10"
