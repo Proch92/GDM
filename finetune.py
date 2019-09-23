@@ -6,7 +6,7 @@ import math
 
 BATCH_SIZE = 32
 SPLIT_SIZE = BATCH_SIZE * 100
-EPOCHS = 20
+EPOCHS = 6
 num_classes = 50
 
 # load and preprocess images

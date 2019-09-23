@@ -1,19 +1,22 @@
 import tensorflow as tf
 import numpy as np
+import math
 
 
 SPLIT_SIZE = 100
 
-extractor = tf.keras.models.load_model('extractor2.tf')
+extractor = tf.keras.models.load_model('extractor3linear.tf')
 extractor.summary()
 
 # load and preprocess images
-core50_5fps = np.load('core50/5fps.npz')
-imgs = core50_5fps['x']
-labels = core50_5fps['y']
+with np.load('core50/core50_imgs_5fps.npz') as core50_5fps:
+    imgs = core50_5fps['x']
+    instance = core50_5fps['instance']
+    session = core50_5fps['session']
+    category = core50_5fps['category']
 num_classes = 50
-num_samples = len(labels)
-num_batches = int(num_samples / SPLIT_SIZE) + 1
+num_samples = len(instance)
+num_batches = math.ceil(num_samples / SPLIT_SIZE)
 
 print("num samples: {}".format(num_samples))
 
@@ -26,10 +29,11 @@ for i in range(num_batches):
 
     res = extractor.predict_on_batch(batch_x)
     for r in res:
+        r = np.squeeze(r)
         features.append(r)
 
 features = np.array(features)
 # features = features.reshape(-1, features.shape[-1])
 print("final shape: {}".format(features.shape))
 
-np.savez('core50/5fps_features_256.npz', x=features, y=labels)
+np.savez('core50/features.npz', x=features, instance=instance, session=session, category=category)

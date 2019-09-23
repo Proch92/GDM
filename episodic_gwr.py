@@ -237,6 +237,8 @@ class EpisodicGWR(GammaGWR):
         # Remove isolated neurons
         self.remove_isolated_nodes()
 
+        return error_counter
+
     def test(self, ds_vectors, ds_labels, **kwargs):
         test_accuracy = kwargs.get('test_accuracy', False)
         test_vecs = kwargs.get('ret_vecs', False)
