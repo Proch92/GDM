@@ -42,14 +42,15 @@ if __name__ == "__main__":
     with np.load('core50/features.npz') as core50:
         core50_x = core50['x']
         core50_instances = core50['instance']
-        core50_instances = core50_instances - 1  # 0 indexing
         core50_categories = core50['category']
         core50_categories = core50_categories - 1  # 0 indexing
         core50_sessions = core50['session']
 
     assert train_type < 4, "Invalid type of training."
     assert np.all(core50_instances < 50), "there are instances > 49"
+    assert np.all(core50_instances >= 0), "there are instances < 0"
     assert np.all(core50_categories < 10), "there are categories > 9"
+    assert np.all(core50_categories >= 0), "there are categories < 0"
     assert len(np.unique(core50_instances)
                ) == 50, "number of unique instances != 50"
     assert len(np.unique(core50_categories)
@@ -106,7 +107,9 @@ if __name__ == "__main__":
             'test_accuracy_inst': [],
             'test_accuracy_cat': [],
             'first_accuracy_inst': [],
-            'first_accuracy_cat': []
+            'first_accuracy_cat': [],
+            'whole_accuracy_inst': [],
+            'whole_accuracy_cat': []
         },
         'semantic': {
             'no_neurons': [],
@@ -114,14 +117,14 @@ if __name__ == "__main__":
             'test_accuracy_inst': [],
             'test_accuracy_cat': [],
             'first_accuracy_inst': [],
-            'first_accuracy_cat': []
+            'first_accuracy_cat': [],
+            'whole_accuracy_inst': [],
+            'whole_accuracy_cat': []
         }
     }
 
     if train_type == 0:
         # Batch training
-        context = False
-        num_context = 0  # number of context descriptors
         # Train episodic memory
         x = core50_x[train['x'].values]
         ds_labels = np.zeros((len(e_labels), len(train)))
@@ -217,7 +220,7 @@ if __name__ == "__main__":
             profiling['no_instances_seen'].append(len(instances_seen))
             profiling['no_categories_seen'].append(len(categories_seen))
             profiling['episodic']['no_neurons'].append(g_episodic.num_nodes)
-            profiling['semantic']['no_neurons'].append(g_episodic.num_nodes)
+            profiling['semantic']['no_neurons'].append(g_semantic.num_nodes)
             profiling['episodic']['aqe'].append(episodic_aqe)
             profiling['semantic']['aqe'].append(semantic_aqe)
             if train_type == 1:  # NI
@@ -246,6 +249,17 @@ if __name__ == "__main__":
             profiling['episodic']['first_accuracy_cat'].append(g_episodic.test_accuracy[1])
             profiling['semantic']['first_accuracy_inst'].append(g_semantic.test_accuracy[0])
             profiling['semantic']['first_accuracy_cat'].append(g_semantic.test_accuracy[1])
+            ds_labels = np.zeros((len(e_labels), len(test)))
+            ds_labels[0] = test['instance'].values
+            ds_labels[1] = test['category'].values
+            e_weights, eval_labels = g_episodic.test(
+                core50_x[test['x'].values], ds_labels, test_accuracy=True, ret_vecs=True)
+            g_semantic.test(e_weights, eval_labels, test_accuracy=True)
+            profiling['episodic']['whole_accuracy_inst'].append(g_episodic.test_accuracy[0])
+            profiling['episodic']['whole_accuracy_cat'].append(g_episodic.test_accuracy[1])
+            profiling['semantic']['whole_accuracy_inst'].append(g_semantic.test_accuracy[0])
+            profiling['semantic']['whole_accuracy_cat'].append(g_semantic.test_accuracy[1])
+            print(g_semantic.test_accuracy[1])
 
             n_episodes += 1
 

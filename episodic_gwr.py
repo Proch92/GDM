@@ -243,10 +243,10 @@ class EpisodicGWR(GammaGWR):
         test_accuracy = kwargs.get('test_accuracy', False)
         test_vecs = kwargs.get('ret_vecs', False)
         test_samples = ds_vectors.shape[0]
-        self.bmus_index = -np.ones(test_samples)
-        self.bmus_weight = np.zeros((test_samples, self.dimension))
-        self.bmus_label = -np.ones((len(self.num_labels), test_samples))
-        self.bmus_activation = np.zeros(test_samples)
+        bmus_index = -np.ones(test_samples)
+        bmus_weight = np.zeros((test_samples, self.dimension))
+        bmus_label = -np.ones((len(self.num_labels), test_samples))
+        bmus_activation = np.zeros(test_samples)
 
         input_context = np.zeros((self.depth, self.dimension))
 
@@ -257,25 +257,25 @@ class EpisodicGWR(GammaGWR):
             input_context[0] = ds_vectors[i]
             # Find the BMU
             b_index, b_distance = super().find_bmus(input_context)
-            self.bmus_index[i] = b_index
-            self.bmus_weight[i] = self.weights[b_index][0]
-            self.bmus_activation[i] = math.exp(-b_distance)
+            bmus_index[i] = b_index
+            bmus_weight[i] = self.weights[b_index][0]
+            bmus_activation[i] = math.exp(-b_distance)
             for l in range(0, len(self.num_labels)):
-                self.bmus_label[l, i] = np.argmax(self.alabels[l][b_index])
+                bmus_label[l, i] = np.argmax(self.alabels[l][b_index])
 
             for j in range(1, self.depth):
                 input_context[j] = input_context[j - 1]
 
             if test_accuracy:
                 for l in range(0, len(self.num_labels)):
-                    if self.bmus_label[l, i] == ds_labels[l, i]:
+                    if bmus_label[l, i] == ds_labels[l, i]:
                         acc_counter[l] += 1
 
         if test_accuracy:
-            self.test_accuracy = acc_counter / ds_vectors.shape[0]
+            self.test_accuracy = acc_counter / test_samples
 
         if test_vecs:
             s_labels = -np.ones((len(self.num_labels), test_samples))
             for l in range(len(self.num_labels)):
-                s_labels[l] = self.bmus_label[l]
-            return self.bmus_weight, s_labels
+                s_labels[l] = bmus_label[l]
+            return bmus_weight, s_labels

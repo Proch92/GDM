@@ -10,7 +10,7 @@ EPOCHS = 6
 num_classes = 50
 
 # load and preprocess images
-with np.load('core50/core50_imgs_5fps.npz') as core50_5fps:
+with np.load('core50/features.npz') as core50_5fps:
     imgs = core50_5fps['x']
     instance = core50_5fps['instance']
     session = core50_5fps['session']
