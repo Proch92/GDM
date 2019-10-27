@@ -8,7 +8,6 @@ gwr-tb :: Episodic-GWR
 import numpy as np
 import math
 from gammagwr import GammaGWR
-from shareddict import SharedDict
 
 
 class EpisodicGWR(GammaGWR):
@@ -90,32 +89,25 @@ class EpisodicGWR(GammaGWR):
                     (self.alabels[l], new_alabel), axis=0)
 
     def remove_isolated_nodes(self) -> None:
+        cnt_deleted = 0
         if self.num_nodes > 2:
-            ind_c = 0
-            rem_c = 0
-            while (ind_c < self.num_nodes):
-                neighbours = np.nonzero(self.edges[ind_c])
-                if len(neighbours[0]) < 1:
-                    if self.num_nodes > 2:
-                        self.weights.pop(ind_c)
-                        self.habn.pop(ind_c)
-                        for d in range(0, len(self.num_labels)):
-                            d_labels = self.alabels[d]
-                            self.alabels[d] = np.delete(
-                                d_labels, ind_c, axis=0)
-                        self.edges = np.delete(self.edges, ind_c, axis=0)
-                        self.edges = np.delete(self.edges, ind_c, axis=1)
-                        self.ages = np.delete(self.ages, ind_c, axis=0)
-                        self.ages = np.delete(self.ages, ind_c, axis=1)
-                        self.temporal = np.delete(self.temporal, ind_c, axis=0)
-                        self.temporal = np.delete(self.temporal, ind_c, axis=1)
-                        self.num_nodes -= 1
-                        rem_c += 1
-                    else:
-                        return
-                else:
-                    ind_c += 1
-            print("(-- Removed %s neuron(s))" % rem_c)
+            neigh_sum = np.add.reduce(self.edges)
+            to_delete = np.where(neigh_sum.flatten() == 0)[0]
+            cnt_deleted = len(to_delete)
+
+            if self.num_nodes - cnt_deleted < 2:
+                cnt_deleted = self.num_nodes - 2
+                to_delete = to_delete[:cnt_deleted]
+
+            self.edges = np.delete(self.edges, to_delete, axis=0)
+            self.edges = np.delete(self.edges, to_delete, axis=1)
+            self.ages = np.delete(self.ages, to_delete, axis=0)
+            self.ages = np.delete(self.ages, to_delete, axis=1)
+            self.temporal = np.delete(self.temporal, to_delete, axis=0)
+            self.temporal = np.delete(self.temporal, to_delete, axis=1)
+            self.num_nodes = self.num_nodes - cnt_deleted
+
+        print("(-- Removed %s neuron(s))" % cnt_deleted)
 
     def train_egwr(self, ds_vectors, ds_labels, epochs, a_threshold, beta,
                    l_rates, context, regulated) -> None:
@@ -227,9 +219,9 @@ class EpisodicGWR(GammaGWR):
                 previous_ind = b_index
 
             # Remove old edges
-            print("remove old edges....")
+            # print("remove old edges....")
             super().remove_old_edges()
-            print("... roe done")
+            # print("... roe done")
 
             # Average quantization error (AQE)
             error_counter[epoch] /= self.samples
@@ -238,9 +230,9 @@ class EpisodicGWR(GammaGWR):
                   (epoch + 1, self.num_nodes, error_counter[epoch]))
 
         # Remove isolated neurons
-        print("remove isolated nodes....")
+        # print("remove isolated nodes....")
         self.remove_isolated_nodes()
-        print("... rin done")
+        # print("... rin done")
 
         return error_counter
 
