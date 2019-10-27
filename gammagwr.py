@@ -35,14 +35,12 @@ class GammaGWR:
 
     def find_bmus(self, input_vector, **kwargs) -> Union[Callable[[np.ndarray], Any], Tuple[int, float]]:
         second_best = kwargs.get('s_best', False)
-        distances = np.zeros(self.num_nodes)
-        for i in range(0, self.num_nodes):
-            distances[i] = self.compute_distance(self.weights[i], input_vector)
+        distances = [self.compute_distance(w, input_vector) for w in self.weights]
         if second_best:
             # Compute best and second-best matching units
             return self.find_bs(distances)
         else:
-            b_index = distances.argmin()
+            b_index = np.argmin(distances)
             b_distance = distances[b_index]
             return b_index, b_distance
 

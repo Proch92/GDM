@@ -99,6 +99,8 @@ class EpisodicGWR(GammaGWR):
                 cnt_deleted = self.num_nodes - 2
                 to_delete = to_delete[:cnt_deleted]
 
+            self.weights = [w for i, w in enumerate(self.weights) if i not in to_delete]
+            self.habn = [w for i, w in enumerate(self.habn) if i not in to_delete]
             self.edges = np.delete(self.edges, to_delete, axis=0)
             self.edges = np.delete(self.edges, to_delete, axis=1)
             self.ages = np.delete(self.ages, to_delete, axis=0)
