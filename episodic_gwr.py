@@ -8,6 +8,7 @@ gwr-tb :: Episodic-GWR
 import numpy as np
 import math
 from gammagwr import GammaGWR
+from shareddict import SharedDict
 
 
 class EpisodicGWR(GammaGWR):
@@ -226,7 +227,9 @@ class EpisodicGWR(GammaGWR):
                 previous_ind = b_index
 
             # Remove old edges
+            print("remove old edges....")
             super().remove_old_edges()
+            print("... roe done")
 
             # Average quantization error (AQE)
             error_counter[epoch] /= self.samples
@@ -235,7 +238,9 @@ class EpisodicGWR(GammaGWR):
                   (epoch + 1, self.num_nodes, error_counter[epoch]))
 
         # Remove isolated neurons
+        print("remove isolated nodes....")
         self.remove_isolated_nodes()
+        print("... rin done")
 
         return error_counter
 

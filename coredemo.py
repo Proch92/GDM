@@ -12,6 +12,7 @@ import random
 import sys
 import pickle
 from episodic_gwr import EpisodicGWR
+from shareddict import SharedDict
 
 
 def replay_samples(net, size) -> (np.ndarray, np.ndarray):
@@ -82,7 +83,7 @@ if __name__ == "__main__":
 
     context = True
     num_context = 2  # number of context descriptors
-    epochs = 2  # epochs per sample for incremental learning
+    epochs = 7  # epochs per sample for incremental learning
     a_threshold = [0.3, 0.001]
     beta = 0.7
     learning_rates = [0.5, 0.005]
@@ -94,6 +95,7 @@ if __name__ == "__main__":
     g_semantic.init_network(core50_x[train['x'].values], s_labels, num_context)
 
     # profiling
+    profiler = SharedDict()
     instances_seen = set()
     categories_seen = set()
     sessions_seen = set()
@@ -168,9 +170,6 @@ if __name__ == "__main__":
             batches[0] = pd.concat([batches[0], batches[1]])
             del batches[1]
 
-        ds_labels_train = np.zeros((len(e_labels), len(train)))
-        ds_labels_train[0] = train['instance'].values
-        ds_labels_train[1] = train['category'].values
         # Train episodic memory
 
         for batch in batches:
@@ -234,7 +233,7 @@ if __name__ == "__main__":
             ds_labels[1] = test_batch['category'].values
             e_weights, eval_labels = g_episodic.test(
                 core50_x[test_batch['x'].values], ds_labels, test_accuracy=True, ret_vecs=True)
-            g_semantic.test(e_weights, eval_labels, test_accuracy=True)
+            g_semantic.test(e_weights, ds_labels, test_accuracy=True)
             profiling['episodic']['test_accuracy_inst'].append(g_episodic.test_accuracy[0])
             profiling['episodic']['test_accuracy_cat'].append(g_episodic.test_accuracy[1])
             profiling['semantic']['test_accuracy_inst'].append(g_semantic.test_accuracy[0])
@@ -244,7 +243,7 @@ if __name__ == "__main__":
             ds_labels[1] = batches[0]['category'].values
             e_weights, eval_labels = g_episodic.test(
                 core50_x[batches[0]['x'].values], ds_labels, test_accuracy=True, ret_vecs=True)
-            g_semantic.test(e_weights, eval_labels, test_accuracy=True)
+            g_semantic.test(e_weights, ds_labels, test_accuracy=True)
             profiling['episodic']['first_accuracy_inst'].append(g_episodic.test_accuracy[0])
             profiling['episodic']['first_accuracy_cat'].append(g_episodic.test_accuracy[1])
             profiling['semantic']['first_accuracy_inst'].append(g_semantic.test_accuracy[0])
@@ -254,7 +253,7 @@ if __name__ == "__main__":
             ds_labels[1] = test['category'].values
             e_weights, eval_labels = g_episodic.test(
                 core50_x[test['x'].values], ds_labels, test_accuracy=True, ret_vecs=True)
-            g_semantic.test(e_weights, eval_labels, test_accuracy=True)
+            g_semantic.test(e_weights, ds_labels, test_accuracy=True)
             profiling['episodic']['whole_accuracy_inst'].append(g_episodic.test_accuracy[0])
             profiling['episodic']['whole_accuracy_cat'].append(g_episodic.test_accuracy[1])
             profiling['semantic']['whole_accuracy_inst'].append(g_semantic.test_accuracy[0])
@@ -269,7 +268,7 @@ if __name__ == "__main__":
     ds_labels[1] = test['category'].values
     e_weights, eval_labels = g_episodic.test(
         core50_x[test['x'].values], ds_labels, test_accuracy=True, ret_vecs=True)
-    g_semantic.test(e_weights, eval_labels, test_accuracy=True)
+    g_semantic.test(e_weights, ds_labels, test_accuracy=True)
 
     print("Accuracy instance episodic: %s, semantic: %s" %
           (g_episodic.test_accuracy[0], g_semantic.test_accuracy[0]))
