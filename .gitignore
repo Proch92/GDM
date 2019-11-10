@@ -2,3 +2,7 @@
 core50/
 
 __pycache__/
+
+profiling/
+
+media/

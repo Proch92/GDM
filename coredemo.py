@@ -12,7 +12,12 @@ import random
 import sys
 import pickle
 from episodic_gwr import EpisodicGWR
-from shareddict import SharedDict
+from tqdm import tqdm
+from pubsub import pub
+import config
+
+
+PROFILING = True
 
 
 def replay_samples(net, size) -> (np.ndarray, np.ndarray):
@@ -81,21 +86,21 @@ if __name__ == "__main__":
     e_labels = [50, 10]
     s_labels = [50, 10]
 
-    context = True
-    num_context = 2  # number of context descriptors
-    epochs = 7  # epochs per sample for incremental learning
-    a_threshold = [0.3, 0.001]
-    beta = 0.7
-    learning_rates = [0.5, 0.005]
+    parameters = config.from_file("configs/paper.json")
 
-    g_episodic = EpisodicGWR()
+    context = True
+    num_context = parameters["context_depth"]
+    epochs = 2  # epochs per sample for incremental learning
+    a_threshold = [parameters["insertion_threshold_episodic"], parameters["insertion_threshold_semantic"]]
+    learning_rates = [parameters["learning_rate_bmu"], parameters["learning_rate_neighbours"]]
+
+    g_episodic = EpisodicGWR('episodic')
     g_episodic.init_network(core50_x[train['x'].values], e_labels, num_context)
 
-    g_semantic = EpisodicGWR()
+    g_semantic = EpisodicGWR('semantic')
     g_semantic.init_network(core50_x[train['x'].values], s_labels, num_context)
 
     # profiling
-    profiler = SharedDict()
     instances_seen = set()
     categories_seen = set()
     sessions_seen = set()
@@ -134,12 +139,12 @@ if __name__ == "__main__":
         ds_labels[1] = train['category'].values
 
         g_episodic.train_egwr(
-            x, ds_labels, epochs, a_threshold[0], beta, learning_rates, context, regulated=0)
+            x, ds_labels, epochs, a_threshold[0], context, parameters, regulated=0)
 
         e_weights, eval_labels = g_episodic.test(x, ds_labels, ret_vecs=True)
         # Train semantic memory
         g_semantic.train_egwr(e_weights, eval_labels, epochs,
-                              a_threshold[1], beta, learning_rates, context, regulated=1)
+                              a_threshold[1], context, parameters, regulated=1)
 
     else:
         # Incremental training New Instance NI
@@ -171,8 +176,7 @@ if __name__ == "__main__":
             del batches[1]
 
         # Train episodic memory
-
-        for batch in batches:
+        for batch in tqdm(batches, desc='Batches'):
             # prepare labels
             ds_labels = np.zeros((len(e_labels), len(batch)))
             ds_labels[0] = batch['instance'].values
@@ -180,8 +184,8 @@ if __name__ == "__main__":
 
             episodic_aqe = g_episodic.train_egwr(core50_x[batch['x'].values],
                                                  ds_labels,
-                                                 epochs, a_threshold[0], beta, learning_rates,
-                                                 context, regulated=0)
+                                                 epochs, a_threshold[0],
+                                                 context, parameters, regulated=0)
 
             e_weights, eval_labels = g_episodic.test(
                 core50_x[batch['x'].values], ds_labels, ret_vecs=True)
@@ -189,19 +193,19 @@ if __name__ == "__main__":
             # Train semantic memory
             semantic_aqe = g_semantic.train_egwr(e_weights,
                                                  eval_labels,
-                                                 epochs, a_threshold[1], beta, learning_rates,
-                                                 context, regulated=1)
+                                                 epochs, a_threshold[1],
+                                                 context, parameters, regulated=1)
 
             if train_replay and n_episodes > 0:
                 # Replay pseudo-samples
                 for r in range(0, replay_weights.shape[0]):
                     g_episodic.train_egwr(replay_weights[r], replay_labels[r, :],
-                                          epochs, a_threshold[0], beta,
-                                          learning_rates, 0, 0)
+                                          epochs, a_threshold[0],
+                                          0, parameters, regulated=0)
 
                     g_semantic.train_egwr(replay_weights[r], replay_labels[r],
-                                          epochs, a_threshold[1], beta,
-                                          learning_rates, 0, 1)
+                                          epochs, a_threshold[1],
+                                          0, parameters, regulated=1)
 
             # Generate pseudo-samples
             if train_replay:
@@ -209,56 +213,56 @@ if __name__ == "__main__":
                     g_episodic, replay_size)
 
             # profiling
-            profiling['episode'].append(n_episodes)
-            for i in batch['instance'].unique():
-                instances_seen.add(i)
-            for c in batch['category'].unique():
-                categories_seen.add(c)
-            for s in batch['session'].unique():
-                sessions_seen.add(s)
-            profiling['no_instances_seen'].append(len(instances_seen))
-            profiling['no_categories_seen'].append(len(categories_seen))
-            profiling['episodic']['no_neurons'].append(g_episodic.num_nodes)
-            profiling['semantic']['no_neurons'].append(g_semantic.num_nodes)
-            profiling['episodic']['aqe'].append(episodic_aqe)
-            profiling['semantic']['aqe'].append(semantic_aqe)
-            if train_type == 1:  # NI
-                test_batch = train[train['session'].isin(sessions_seen)]
-            elif train_type == 2:  # NC
-                test_batch = train[train['category'].isin(categories_seen)]
-            elif train_type == 3:  # NIC
-                test_batch = train[train['instance'].isin(instances_seen)]
-            ds_labels = np.zeros((len(e_labels), len(test_batch)))
-            ds_labels[0] = test_batch['instance'].values
-            ds_labels[1] = test_batch['category'].values
-            e_weights, eval_labels = g_episodic.test(
-                core50_x[test_batch['x'].values], ds_labels, test_accuracy=True, ret_vecs=True)
-            g_semantic.test(e_weights, ds_labels, test_accuracy=True)
-            profiling['episodic']['test_accuracy_inst'].append(g_episodic.test_accuracy[0])
-            profiling['episodic']['test_accuracy_cat'].append(g_episodic.test_accuracy[1])
-            profiling['semantic']['test_accuracy_inst'].append(g_semantic.test_accuracy[0])
-            profiling['semantic']['test_accuracy_cat'].append(g_semantic.test_accuracy[1])
-            ds_labels = np.zeros((len(e_labels), len(batches[0])))
-            ds_labels[0] = batches[0]['instance'].values
-            ds_labels[1] = batches[0]['category'].values
-            e_weights, eval_labels = g_episodic.test(
-                core50_x[batches[0]['x'].values], ds_labels, test_accuracy=True, ret_vecs=True)
-            g_semantic.test(e_weights, ds_labels, test_accuracy=True)
-            profiling['episodic']['first_accuracy_inst'].append(g_episodic.test_accuracy[0])
-            profiling['episodic']['first_accuracy_cat'].append(g_episodic.test_accuracy[1])
-            profiling['semantic']['first_accuracy_inst'].append(g_semantic.test_accuracy[0])
-            profiling['semantic']['first_accuracy_cat'].append(g_semantic.test_accuracy[1])
-            ds_labels = np.zeros((len(e_labels), len(test)))
-            ds_labels[0] = test['instance'].values
-            ds_labels[1] = test['category'].values
-            e_weights, eval_labels = g_episodic.test(
-                core50_x[test['x'].values], ds_labels, test_accuracy=True, ret_vecs=True)
-            g_semantic.test(e_weights, ds_labels, test_accuracy=True)
-            profiling['episodic']['whole_accuracy_inst'].append(g_episodic.test_accuracy[0])
-            profiling['episodic']['whole_accuracy_cat'].append(g_episodic.test_accuracy[1])
-            profiling['semantic']['whole_accuracy_inst'].append(g_semantic.test_accuracy[0])
-            profiling['semantic']['whole_accuracy_cat'].append(g_semantic.test_accuracy[1])
-            print(g_semantic.test_accuracy[1])
+            if PROFILING:
+                profiling['episode'].append(n_episodes)
+                for i in batch['instance'].unique():
+                    instances_seen.add(i)
+                for c in batch['category'].unique():
+                    categories_seen.add(c)
+                for s in batch['session'].unique():
+                    sessions_seen.add(s)
+                profiling['no_instances_seen'].append(len(instances_seen))
+                profiling['no_categories_seen'].append(len(categories_seen))
+                profiling['episodic']['no_neurons'].append(g_episodic.num_nodes)
+                profiling['semantic']['no_neurons'].append(g_semantic.num_nodes)
+                profiling['episodic']['aqe'].append(episodic_aqe)
+                profiling['semantic']['aqe'].append(semantic_aqe)
+                if train_type == 1:  # NI
+                    test_batch = train[train['session'].isin(sessions_seen)]
+                elif train_type == 2:  # NC
+                    test_batch = train[train['category'].isin(categories_seen)]
+                elif train_type == 3:  # NIC
+                    test_batch = train[train['instance'].isin(instances_seen)]
+                ds_labels = np.zeros((len(e_labels), len(test_batch)))
+                ds_labels[0] = test_batch['instance'].values
+                ds_labels[1] = test_batch['category'].values
+                e_weights, eval_labels = g_episodic.test(
+                    core50_x[test_batch['x'].values], ds_labels, test_accuracy=True, ret_vecs=True)
+                g_semantic.test(e_weights, ds_labels, test_accuracy=True)
+                profiling['episodic']['test_accuracy_inst'].append(g_episodic.test_accuracy[0])
+                profiling['episodic']['test_accuracy_cat'].append(g_episodic.test_accuracy[1])
+                profiling['semantic']['test_accuracy_inst'].append(g_semantic.test_accuracy[0])
+                profiling['semantic']['test_accuracy_cat'].append(g_semantic.test_accuracy[1])
+                ds_labels = np.zeros((len(e_labels), len(batches[0])))
+                ds_labels[0] = batches[0]['instance'].values
+                ds_labels[1] = batches[0]['category'].values
+                e_weights, eval_labels = g_episodic.test(
+                    core50_x[batches[0]['x'].values], ds_labels, test_accuracy=True, ret_vecs=True)
+                g_semantic.test(e_weights, ds_labels, test_accuracy=True)
+                profiling['episodic']['first_accuracy_inst'].append(g_episodic.test_accuracy[0])
+                profiling['episodic']['first_accuracy_cat'].append(g_episodic.test_accuracy[1])
+                profiling['semantic']['first_accuracy_inst'].append(g_semantic.test_accuracy[0])
+                profiling['semantic']['first_accuracy_cat'].append(g_semantic.test_accuracy[1])
+                ds_labels = np.zeros((len(e_labels), len(test)))
+                ds_labels[0] = test['instance'].values
+                ds_labels[1] = test['category'].values
+                e_weights, eval_labels = g_episodic.test(
+                    core50_x[test['x'].values], ds_labels, test_accuracy=True, ret_vecs=True)
+                g_semantic.test(e_weights, ds_labels, test_accuracy=True)
+                profiling['episodic']['whole_accuracy_inst'].append(g_episodic.test_accuracy[0])
+                profiling['episodic']['whole_accuracy_cat'].append(g_episodic.test_accuracy[1])
+                profiling['semantic']['whole_accuracy_inst'].append(g_semantic.test_accuracy[0])
+                profiling['semantic']['whole_accuracy_cat'].append(g_semantic.test_accuracy[1])
 
             n_episodes += 1
 
@@ -275,5 +279,6 @@ if __name__ == "__main__":
     print("Accuracy category episodic: %s, semantic: %s" %
           (g_episodic.test_accuracy[1], g_semantic.test_accuracy[1]))
 
-    with open('profiling' + str(train_type) + '.pkl', 'wb') as f:
-        pickle.dump(profiling, f)
+    if PROFILING:
+        with open('profiling/profiling' + str(train_type) + '.pkl', 'wb') as f:
+            pickle.dump(profiling, f)

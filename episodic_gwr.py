@@ -8,11 +8,14 @@ gwr-tb :: Episodic-GWR
 import numpy as np
 import math
 from gammagwr import GammaGWR
+from tqdm import tqdm
+from pubsub import pub
 
 
 class EpisodicGWR(GammaGWR):
 
-    def __init__(self):
+    def __init__(self, name):
+        super().__init__(name)
         self.iterations = 0
 
     def init_network(self, ds, e_labels, num_context) -> None:
@@ -56,6 +59,7 @@ class EpisodicGWR(GammaGWR):
 
         # Context coefficients
         self.alphas = self.compute_alphas(self.depth)
+        self.alphas_T = self.alphas.T
 
     # par 3.2 episodic memory
     # hebbian update temporal synaptic link
@@ -101,6 +105,7 @@ class EpisodicGWR(GammaGWR):
 
             self.weights = [w for i, w in enumerate(self.weights) if i not in to_delete]
             self.habn = [w for i, w in enumerate(self.habn) if i not in to_delete]
+            self.alabels = [np.delete(lab, to_delete, axis=0) for lab in self.alabels]
             self.edges = np.delete(self.edges, to_delete, axis=0)
             self.edges = np.delete(self.edges, to_delete, axis=1)
             self.ages = np.delete(self.ages, to_delete, axis=0)
@@ -109,42 +114,42 @@ class EpisodicGWR(GammaGWR):
             self.temporal = np.delete(self.temporal, to_delete, axis=1)
             self.num_nodes = self.num_nodes - cnt_deleted
 
-        print("(-- Removed %s neuron(s))" % cnt_deleted)
+        # print("(-- Removed %s neuron(s))" % cnt_deleted)
 
-    def train_egwr(self, ds_vectors, ds_labels, epochs, a_threshold, beta,
-                   l_rates, context, regulated) -> None:
+    def train_egwr(self, ds_vectors, ds_labels, epochs, a_threshold,
+                   context, parameters, regulated) -> None:
 
         assert not self.locked, "Network is locked. Unlock to train."
 
         self.samples = ds_vectors.shape[0]
         self.max_epochs = epochs
         self.a_threshold = a_threshold
-        self.epsilon_b, self.epsilon_n = l_rates
-        self.beta = beta
+        self.epsilon_b = parameters["learning_rate_bmu"]
+        self.epsilon_n = parameters["learning_rate_neighbours"]
+        self.beta = parameters["beta"]
         self.regulated = regulated
         self.context = context
         if not self.context:
             self.g_context.fill(0)
-        self.hab_threshold = 0.1
-        self.tau_b = 0.3
-        self.tau_n = 0.1
+        self.hab_threshold = parameters["habituation_threshold"]
+        self.tau_b = parameters["tau_bmu"]
+        self.tau_n = parameters["tau_neighbours"]
         self.max_nodes = self.samples  # OK for batch, bad for incremental
-        self.max_neighbors = 6
-        self.max_age = 600
-        self.new_node = 0.5
-        self.a_inc = 1
-        self.a_dec = 0.1
-        self.mod_rate = 0.01
+        self.max_neighbors = parameters["max_neighbours"]
+        self.max_age = parameters["max_age"]
+        self.new_node = parameters["new_node"]
+        self.a_inc = parameters["labels_a_inc"]
+        self.a_dec = parameters["labels_a_dec"]
+        self.mod_rate = parameters["mod_rate"]
 
         # Start training
         error_counter = np.zeros(self.max_epochs)
         previous_bmu = np.zeros((self.depth, self.dimension))
         previous_ind = -1
-        for epoch in range(0, self.max_epochs):
-            for iteration in range(0, self.samples):
-                if self.iterations % 100 == 0:
-                    print('epoch: {} / {} - {:.2f}%'.format(epoch + 1, self.max_epochs, (iteration / self.samples) * 100), end='')
-                    print('\r', end='')
+        for epoch in tqdm(range(self.max_epochs), desc="Epochs"):
+            for iteration in tqdm(range(self.samples), desc="Samples"):
+                # if self.iterations % 100 == 0:
+                #    print('epoch: {} / {} - {:.2f}%'.format(epoch + 1, self.max_epochs, (iteration / self.samples) * 100))
 
                 # Generate input sample
                 self.g_context[0] = ds_vectors[iteration]
@@ -220,21 +225,19 @@ class EpisodicGWR(GammaGWR):
 
                 previous_ind = b_index
 
+                pub.sendMessage('num_nodes', val=self.num_nodes, name=self.name)
+
             # Remove old edges
-            # print("remove old edges....")
             super().remove_old_edges()
-            # print("... roe done")
 
             # Average quantization error (AQE)
             error_counter[epoch] /= self.samples
 
-            print("(Epoch: %s, NN: %s, ATQE: %s)" %
-                  (epoch + 1, self.num_nodes, error_counter[epoch]))
+            # print("(Epoch: %s, NN: %s, ATQE: %s)" %
+            #      (epoch + 1, self.num_nodes, error_counter[epoch]))
 
         # Remove isolated neurons
-        # print("remove isolated nodes....")
         self.remove_isolated_nodes()
-        # print("... rin done")
 
         return error_counter
 

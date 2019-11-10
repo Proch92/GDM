@@ -5,7 +5,7 @@ import sys
 
 ttype = sys.argv[1]
 
-with open('profiling' + ttype + '.pkl', 'rb') as f:
+with open('profiling/profiling' + ttype + '.pkl', 'rb') as f:
     profiling = pickle.load(f)
 
 fig, axs = plt.subplots(3, 1, sharex=True)
@@ -29,7 +29,7 @@ axs[1].legend()
 axs[2].legend()
 
 plt.xlabel('episode / batch')
-plt.savefig('training_stats' + ttype + '.png')
+plt.savefig('media/training_stats' + ttype + '.png')
 
 fig, axs = plt.subplots(2, 2)
 fig.subplots_adjust(hspace=0.3)
@@ -45,7 +45,7 @@ axs[1][1].set_title('Test acc categories first batch')
 axs[1][1].plot(profiling['episode'], profiling['semantic']['first_accuracy_cat'])
 
 plt.xlabel('episode / batch')
-plt.savefig('accuracies' + ttype + '.png')
+plt.savefig('media/accuracies' + ttype + '.png')
 
 fig, axs = plt.subplots(2, 1, sharex=True)
 fig.subplots_adjust(hspace=0.3)
@@ -57,4 +57,4 @@ axs[0].legend()
 axs[1].legend()
 
 plt.xlabel('episode / batch')
-plt.savefig('test_acc' + ttype + '.png')
+plt.savefig('media/test_acc' + ttype + '.png')

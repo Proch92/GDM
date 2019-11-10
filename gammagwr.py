@@ -13,7 +13,8 @@ from typing import Tuple, Union, Callable, Any
 
 class GammaGWR:
 
-    def __init__(self):
+    def __init__(self, name):
+        self.name = name
         self.iterations = 0
 
     # coefficente alpha dei fattori di contesto spaziotemporale.
@@ -26,12 +27,12 @@ class GammaGWR:
         alpha_w[:] = alpha_w[:] / sum(alpha_w)
         return alpha_w
 
-    def compute_distance(self, x, y) -> float:
-        return np.linalg.norm(np.dot(self.alphas.T, (x - y)))
-
     def find_bs(self, dis) -> Tuple[int, float, int]:
         bs = nsmallest(2, ((k, i) for i, k in enumerate(dis)))
         return bs[0][1], bs[0][0], bs[1][1]
+
+    def compute_distance(self, x, input_vector) -> float:
+        return np.linalg.norm(np.dot(self.alphas_T, (x - input_vector)))
 
     def find_bmus(self, input_vector, **kwargs) -> Union[Callable[[np.ndarray], Any], Tuple[int, float]]:
         second_best = kwargs.get('s_best', False)
@@ -93,6 +94,7 @@ class GammaGWR:
 
         # Context coefficients
         self.alphas = self.compute_alphas(self.depth)
+        self.alphas_T = self.alphas.T
 
     def add_node(self, b_index) -> None:
         # self.new_node is constant 0.5.
@@ -213,8 +215,8 @@ class GammaGWR:
         self.beta = beta  # balance between recursion and context. par 3.1 ref 3
 
         self.hab_threshold = 0.1
-        self.tau_b = 0.3
-        self.tau_n = 0.1
+        self.tau_b = 0.15    # original 0.3
+        self.tau_n = 0.05    # original 0.1
         self.max_nodes = self.samples  # OK for batch, bad for incremental
         self.max_neighbors = 6
         self.max_age = 600
