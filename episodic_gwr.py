@@ -9,7 +9,7 @@ import numpy as np
 import math
 from gammagwr import GammaGWR
 from tqdm import tqdm
-from pubsub import pub
+import publish
 
 
 class EpisodicGWR(GammaGWR):
@@ -134,7 +134,10 @@ class EpisodicGWR(GammaGWR):
         self.hab_threshold = parameters["habituation_threshold"]
         self.tau_b = parameters["tau_bmu"]
         self.tau_n = parameters["tau_neighbours"]
-        self.max_nodes = self.samples  # OK for batch, bad for incremental
+        if parameters["max_nodes"] == 0:
+            self.max_nodes = self.samples  # OK for batch, bad for incremental
+        else:
+            self.max_nodes = parameters["max_nodes"]
         self.max_neighbors = parameters["max_neighbours"]
         self.max_age = parameters["max_age"]
         self.new_node = parameters["new_node"]
@@ -225,7 +228,7 @@ class EpisodicGWR(GammaGWR):
 
                 previous_ind = b_index
 
-                pub.sendMessage('num_nodes', val=self.num_nodes, name=self.name)
+                publish.send('num_nodes_' + self.name, self.num_nodes)
 
             # Remove old edges
             super().remove_old_edges()

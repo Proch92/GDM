@@ -13,8 +13,8 @@ import sys
 import pickle
 from episodic_gwr import EpisodicGWR
 from tqdm import tqdm
-from pubsub import pub
 import config
+import rtplot
 
 
 PROFILING = True
@@ -86,13 +86,12 @@ if __name__ == "__main__":
     e_labels = [50, 10]
     s_labels = [50, 10]
 
-    parameters = config.from_file("configs/paper.json")
+    parameters = config.from_file("configs/custom.json")
 
     context = True
     num_context = parameters["context_depth"]
-    epochs = 2  # epochs per sample for incremental learning
+    epochs = 1  # epochs per sample for incremental learning
     a_threshold = [parameters["insertion_threshold_episodic"], parameters["insertion_threshold_semantic"]]
-    learning_rates = [parameters["learning_rate_bmu"], parameters["learning_rate_neighbours"]]
 
     g_episodic = EpisodicGWR('episodic')
     g_episodic.init_network(core50_x[train['x'].values], e_labels, num_context)
@@ -130,6 +129,9 @@ if __name__ == "__main__":
         }
     }
 
+    rtplot.plot(topic="num_nodes_episodic", refresh_rate=0.5)
+    rtplot.plot(topic="num_nodes_semantic", refresh_rate=0.01)
+
     if train_type == 0:
         # Batch training
         # Train episodic memory
@@ -142,6 +144,7 @@ if __name__ == "__main__":
             x, ds_labels, epochs, a_threshold[0], context, parameters, regulated=0)
 
         e_weights, eval_labels = g_episodic.test(x, ds_labels, ret_vecs=True)
+
         # Train semantic memory
         g_semantic.train_egwr(e_weights, eval_labels, epochs,
                               a_threshold[1], context, parameters, regulated=1)
@@ -150,7 +153,7 @@ if __name__ == "__main__":
         # Incremental training New Instance NI
         batch_size = 10  # number of samples per epoch
         # Replay parameters
-        train_replay = True
+        train_replay = False
         replay_size = (num_context * 2) + 1  # size of RNATs
         replay_weights = []
         replay_labels = []
@@ -175,6 +178,10 @@ if __name__ == "__main__":
             batches[0] = pd.concat([batches[0], batches[1]])
             del batches[1]
 
+        print('printing batches lens')
+        for b in batches:
+            print(len(b['instance'].values))
+
         # Train episodic memory
         for batch in tqdm(batches, desc='Batches'):
             # prepare labels
@@ -189,6 +196,8 @@ if __name__ == "__main__":
 
             e_weights, eval_labels = g_episodic.test(
                 core50_x[batch['x'].values], ds_labels, ret_vecs=True)
+
+            assert len(core50_x[batch['x'].values]) == len(e_weights), "test doing crap"
 
             # Train semantic memory
             semantic_aqe = g_semantic.train_egwr(e_weights,
