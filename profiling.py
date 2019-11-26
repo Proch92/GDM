@@ -1,32 +1,33 @@
+import publish
+from functools import partial
+import pickle
+import time
 
 
-class Profiler():
-    def __init__(self):
-        self.instances_seen = set()
-        self.categories_seen = set()
-        self.sessions_seen = set()
-        self.profiling = {
-            'episode': [],
-            'no_instances_seen': [],
-            'no_categories_seen': [],
-            'episodic': {
-                'no_neurons': [],
-                'aqe': [],
-                'test_accuracy_inst': [],
-                'test_accuracy_cat': [],
-                'first_accuracy_inst': [],
-                'first_accuracy_cat': [],
-                'whole_accuracy_inst': [],
-                'whole_accuracy_cat': []
-            },
-            'semantic': {
-                'no_neurons': [],
-                'aqe': [],
-                'test_accuracy_inst': [],
-                'test_accuracy_cat': [],
-                'first_accuracy_inst': [],
-                'first_accuracy_cat': [],
-                'whole_accuracy_inst': [],
-                'whole_accuracy_cat': []
-            }
-        }
+class Profiler(object):
+    def __init__(self, topics):
+        self.topics = topics
+        self.buffers = {}
+
+        for topic in self.topics:
+            self.buffers[topic] = []
+            publish.subscribe(partial(self.on_receive, topic=topic), topic)
+
+    def on_receive(self, val, topic):
+        self.buffers[topic].append(val)
+
+    def save_all(self):
+        for topic in self.topics:
+            with open('profiling/topics/' + topic + '.pkl', 'wb') as f:
+                pickle.dump(self.buffers[topic], f)
+
+
+def timeit(method):
+    def timed(*args, **kw):
+        ts = time.time()
+        result = method(*args, **kw)
+        te = time.time()
+
+        print('%r %f sec' % (method.__name__, te - ts))
+        return result
+    return timed

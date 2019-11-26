@@ -11,11 +11,11 @@ processes = []
 pipes = {}
 
 
-def plotter(pipe, max_len, refresh_rate):
+def plotter(pipe, max_len, refresh_rate, ylim_max):
     buffer = deque([0.0] * max_len)
 
     xlim = (0, max_len)
-    ylim = (0, 100)
+    ylim = (0, ylim_max)
 
     fig = plt.figure()
     plt.axes(xlim=xlim, ylim=ylim)
@@ -44,9 +44,9 @@ def pipe_send(val, topic):
     pipes[topic].send(val)
 
 
-def plot(topic, max_len=1000, refresh_rate=1):
+def plot(topic, max_len=1000, refresh_rate=1, ylim_max=100):
     child_conn, parent_conn = Pipe(duplex=False)
-    p = Process(target=plotter, args=(child_conn, max_len, refresh_rate))
+    p = Process(target=plotter, args=(child_conn, max_len, refresh_rate, ylim_max))
     p.daemon = True
     p.start()
     processes.append(p)

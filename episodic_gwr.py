@@ -174,6 +174,9 @@ class EpisodicGWR(GammaGWR):
 
                 # Compute network activity
                 a = math.exp(-b_distance)
+                publish.send('activity_' + self.name, a)
+
+                publish.send('update_rate_' + self.name, self.habn[b_index] * self.epsilon_b)
 
                 # Store BMU at time t for t+1
                 previous_bmu = self.weights[b_index]

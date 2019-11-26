@@ -15,9 +15,10 @@ from episodic_gwr import EpisodicGWR
 from tqdm import tqdm
 import config
 import rtplot
+from profiling import Profiler
 
 
-PROFILING = True
+PROFILING = False
 
 
 def replay_samples(net, size) -> (np.ndarray, np.ndarray):
@@ -45,7 +46,7 @@ if __name__ == "__main__":
     train_flag = True
     train_type = int(sys.argv[1])  # 0: Batch, 1: NI, 2: NC, 3: NIC
 
-    with np.load('core50/features.npz') as core50:
+    with np.load('core50/features_norm.npz') as core50:
         core50_x = core50['x']
         core50_instances = core50['instance']
         core50_categories = core50['category']
@@ -129,8 +130,18 @@ if __name__ == "__main__":
         }
     }
 
-    rtplot.plot(topic="num_nodes_episodic", refresh_rate=0.5)
+    profiler = Profiler([
+        'num_nodes_episodic',
+        'num_nodes_semantic',
+        'activity_episodic',
+        'activity_semantic',
+        'update_rate_episodic',
+        'update_rate_semantic'
+    ])
+
+    rtplot.plot(topic="num_nodes_episodic", refresh_rate=0.20)
     rtplot.plot(topic="num_nodes_semantic", refresh_rate=0.01)
+    # rtplot.plot(topic="activity_episodic", refresh_rate=0.20, ylim_max=0.1)
 
     if train_type == 0:
         # Batch training
@@ -288,6 +299,7 @@ if __name__ == "__main__":
     print("Accuracy category episodic: %s, semantic: %s" %
           (g_episodic.test_accuracy[1], g_semantic.test_accuracy[1]))
 
+    profiler.save_all()
     if PROFILING:
         with open('profiling/profiling' + str(train_type) + '.pkl', 'wb') as f:
             pickle.dump(profiling, f)

@@ -1,5 +1,6 @@
 import pickle
 import matplotlib.pyplot as plt
+import numpy as np
 
 import sys
 
@@ -17,8 +18,8 @@ axs[0].plot(profiling['episode'], profiling['semantic']['no_neurons'], label='se
 axs[1].set_title('# instances and categories seen')
 axs[1].plot(profiling['episode'], profiling['no_instances_seen'], label='instances')
 axs[1].plot(profiling['episode'], profiling['no_categories_seen'], label='categories')
-profiling['episodic']['aqe'] = [(a[0] + a[1]) / 2 for a in profiling['episodic']['aqe']]
-profiling['semantic']['aqe'] = [(a[0] + a[1]) / 2 for a in profiling['semantic']['aqe']]
+profiling['episodic']['aqe'] = [np.mean(a) for a in profiling['episodic']['aqe']]
+profiling['semantic']['aqe'] = [np.mean(a) for a in profiling['semantic']['aqe']]
 axs[2].set_title('AQE (loss)')
 axs[2].plot(profiling['episode'], profiling['episodic']['aqe'], label='episodic')
 axs[2].plot(profiling['episode'], profiling['semantic']['aqe'], label='semantic')
