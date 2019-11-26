@@ -238,6 +238,7 @@ class EpisodicGWR(GammaGWR):
 
             # Average quantization error (AQE)
             error_counter[epoch] /= self.samples
+            publish.send('aqe_' + self.name, error_counter[epoch])
 
             # print("(Epoch: %s, NN: %s, ATQE: %s)" %
             #      (epoch + 1, self.num_nodes, error_counter[epoch]))

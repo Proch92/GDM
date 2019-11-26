@@ -22,12 +22,12 @@ class Profiler(object):
                 pickle.dump(self.buffers[topic], f)
 
 
-def timeit(method):
+def timeit(foo):
     def timed(*args, **kw):
         ts = time.time()
-        result = method(*args, **kw)
+        result = foo(*args, **kw)
         te = time.time()
 
-        print('%r %f sec' % (method.__name__, te - ts))
+        print('%r %f sec' % (foo.__name__, te - ts))
         return result
     return timed

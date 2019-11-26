@@ -10,12 +10,12 @@ import numpy as np
 import pandas as pd
 import random
 import sys
-import pickle
 from episodic_gwr import EpisodicGWR
 from tqdm import tqdm
 import config
 import rtplot
 from profiling import Profiler
+import publish
 
 
 PROFILING = False
@@ -104,39 +104,31 @@ if __name__ == "__main__":
     instances_seen = set()
     categories_seen = set()
     sessions_seen = set()
-    profiling = {
-        'episode': [],
-        'no_instances_seen': [],
-        'no_categories_seen': [],
-        'episodic': {
-            'no_neurons': [],
-            'aqe': [],
-            'test_accuracy_inst': [],
-            'test_accuracy_cat': [],
-            'first_accuracy_inst': [],
-            'first_accuracy_cat': [],
-            'whole_accuracy_inst': [],
-            'whole_accuracy_cat': []
-        },
-        'semantic': {
-            'no_neurons': [],
-            'aqe': [],
-            'test_accuracy_inst': [],
-            'test_accuracy_cat': [],
-            'first_accuracy_inst': [],
-            'first_accuracy_cat': [],
-            'whole_accuracy_inst': [],
-            'whole_accuracy_cat': []
-        }
-    }
 
     profiler = Profiler([
+        'episode',
         'num_nodes_episodic',
         'num_nodes_semantic',
         'activity_episodic',
         'activity_semantic',
         'update_rate_episodic',
-        'update_rate_semantic'
+        'update_rate_semantic',
+        'no_instances_seen',
+        'no_categories_seen',
+        'aqe_episodic',
+        'aqe_semantic',
+        'seen_accuracy_inst_episodic',
+        'seen_accuracy_cat_episodic',
+        'seen_accuracy_inst_semantic',
+        'seen_accuracy_cat_semantic',
+        'first_accuracy_inst_episodic',
+        'first_accuracy_cat_episodic',
+        'first_accuracy_inst_semantic',
+        'first_accuracy_cat_semantic',
+        'whole_accuracy_inst_episodic',
+        'whole_accuracy_cat_episodic',
+        'whole_accuracy_inst_semantic',
+        'whole_accuracy_cat_semantic'
     ])
 
     rtplot.plot(topic="num_nodes_episodic", refresh_rate=0.20)
@@ -234,19 +226,18 @@ if __name__ == "__main__":
 
             # profiling
             if PROFILING:
-                profiling['episode'].append(n_episodes)
+                publish.send('episode')
+                # profiling['episode'].append(n_episodes)
                 for i in batch['instance'].unique():
                     instances_seen.add(i)
                 for c in batch['category'].unique():
                     categories_seen.add(c)
                 for s in batch['session'].unique():
                     sessions_seen.add(s)
-                profiling['no_instances_seen'].append(len(instances_seen))
-                profiling['no_categories_seen'].append(len(categories_seen))
-                profiling['episodic']['no_neurons'].append(g_episodic.num_nodes)
-                profiling['semantic']['no_neurons'].append(g_semantic.num_nodes)
-                profiling['episodic']['aqe'].append(episodic_aqe)
-                profiling['semantic']['aqe'].append(semantic_aqe)
+
+                publish.send('no_instances_seen', len(instances_seen))
+                publish.send('no_categories_seen', len(categories_seen))
+
                 if train_type == 1:  # NI
                     test_batch = train[train['session'].isin(sessions_seen)]
                 elif train_type == 2:  # NC
@@ -259,30 +250,34 @@ if __name__ == "__main__":
                 e_weights, eval_labels = g_episodic.test(
                     core50_x[test_batch['x'].values], ds_labels, test_accuracy=True, ret_vecs=True)
                 g_semantic.test(e_weights, ds_labels, test_accuracy=True)
-                profiling['episodic']['test_accuracy_inst'].append(g_episodic.test_accuracy[0])
-                profiling['episodic']['test_accuracy_cat'].append(g_episodic.test_accuracy[1])
-                profiling['semantic']['test_accuracy_inst'].append(g_semantic.test_accuracy[0])
-                profiling['semantic']['test_accuracy_cat'].append(g_semantic.test_accuracy[1])
+
+                publish.send('seen_accuracy_inst_episodic', g_episodic.test_accuracy[0])
+                publish.send('seen_accuracy_cat_episodic', g_episodic.test_accuracy[1])
+                publish.send('seen_accuracy_inst_semantic', g_semantic.test_accuracy[0])
+                publish.send('seen_accuracy_cat_semantic', g_semantic.test_accuracy[1])
+
                 ds_labels = np.zeros((len(e_labels), len(batches[0])))
                 ds_labels[0] = batches[0]['instance'].values
                 ds_labels[1] = batches[0]['category'].values
                 e_weights, eval_labels = g_episodic.test(
                     core50_x[batches[0]['x'].values], ds_labels, test_accuracy=True, ret_vecs=True)
                 g_semantic.test(e_weights, ds_labels, test_accuracy=True)
-                profiling['episodic']['first_accuracy_inst'].append(g_episodic.test_accuracy[0])
-                profiling['episodic']['first_accuracy_cat'].append(g_episodic.test_accuracy[1])
-                profiling['semantic']['first_accuracy_inst'].append(g_semantic.test_accuracy[0])
-                profiling['semantic']['first_accuracy_cat'].append(g_semantic.test_accuracy[1])
+
+                publish.send('first_accuracy_inst_episodic', g_episodic.test_accuracy[0])
+                publish.send('first_accuracy_cat_episodic', g_episodic.test_accuracy[1])
+                publish.send('first_accuracy_inst_semantic', g_semantic.test_accuracy[0])
+                publish.send('first_accuracy_cat_semantic', g_semantic.test_accuracy[1])
+
                 ds_labels = np.zeros((len(e_labels), len(test)))
                 ds_labels[0] = test['instance'].values
                 ds_labels[1] = test['category'].values
                 e_weights, eval_labels = g_episodic.test(
                     core50_x[test['x'].values], ds_labels, test_accuracy=True, ret_vecs=True)
                 g_semantic.test(e_weights, ds_labels, test_accuracy=True)
-                profiling['episodic']['whole_accuracy_inst'].append(g_episodic.test_accuracy[0])
-                profiling['episodic']['whole_accuracy_cat'].append(g_episodic.test_accuracy[1])
-                profiling['semantic']['whole_accuracy_inst'].append(g_semantic.test_accuracy[0])
-                profiling['semantic']['whole_accuracy_cat'].append(g_semantic.test_accuracy[1])
+                publish.send('whole_accuracy_inst_episodic', g_episodic.test_accuracy[0])
+                publish.send('whole_accuracy_cat_episodic', g_episodic.test_accuracy[1])
+                publish.send('whole_accuracy_inst_semantic', g_semantic.test_accuracy[0])
+                publish.send('whole_accuracy_cat_semantic', g_semantic.test_accuracy[1])
 
             n_episodes += 1
 
@@ -300,6 +295,3 @@ if __name__ == "__main__":
           (g_episodic.test_accuracy[1], g_semantic.test_accuracy[1]))
 
     profiler.save_all()
-    if PROFILING:
-        with open('profiling/profiling' + str(train_type) + '.pkl', 'wb') as f:
-            pickle.dump(profiling, f)
