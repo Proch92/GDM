@@ -4,10 +4,36 @@ import numpy as np
 
 import sys
 
-ttype = sys.argv[1]
+file = sys.argv[1]
 
-with open('profiling/profiling' + ttype + '.pkl', 'rb') as f:
+with open(file, 'rb') as f:
     profiling = pickle.load(f)
+
+topics = [
+    'episode',
+    'num_nodes_episodic',
+    'num_nodes_semantic',
+    'activity_episodic',
+    'activity_semantic',
+    'update_rate_episodic',
+    'update_rate_semantic',
+    'no_instances_seen',
+    'no_categories_seen',
+    'aqe_episodic',
+    'aqe_semantic',
+    'seen_accuracy_inst_episodic',
+    'seen_accuracy_cat_episodic',
+    'seen_accuracy_inst_semantic',
+    'seen_accuracy_cat_semantic',
+    'first_accuracy_inst_episodic',
+    'first_accuracy_cat_episodic',
+    'first_accuracy_inst_semantic',
+    'first_accuracy_cat_semantic',
+    'whole_accuracy_inst_episodic',
+    'whole_accuracy_cat_episodic',
+    'whole_accuracy_inst_semantic',
+    'whole_accuracy_cat_semantic'
+]
 
 fig, axs = plt.subplots(3, 1, sharex=True)
 fig.subplots_adjust(hspace=0.3)

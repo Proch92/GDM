@@ -9,16 +9,14 @@ Dual-memory Incremental learning with memory replay
 import numpy as np
 import pandas as pd
 import random
-import sys
 from episodic_gwr import EpisodicGWR
 from tqdm import tqdm
 import config
 import rtplot
 from profiling import Profiler
 import publish
-
-
-PROFILING = False
+import argparse
+from datetime import date
 
 
 def replay_samples(net, size) -> (np.ndarray, np.ndarray):
@@ -38,13 +36,39 @@ def replay_samples(net, size) -> (np.ndarray, np.ndarray):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print('usage: python ' + sys.argv[0] + ' train_type')
-        print('train_type -> 0: Batch, 1: NI, 2: NC, 3: NIC')
-        exit(0)
+    parser = argparse.ArgumentParser(description='GDM on core50')
+    parser.add_argument(
+        '--continual',
+        required=True,
+        type=int,
+        choices=[0, 1, 2, 3],
+        help='batch:0  NI:1  NC:2  NIC:3')
+    parser.add_argument(
+        '--epochs',
+        required=True,
+        type=int,
+        help='number of training epochs')
+    parser.add_argument(
+        '--profiler-tests',
+        dest='tests',
+        action='store_true',
+        help='enables the tests between training episodes')
+    parser.add_argument(
+        '--disable-replay',
+        dest='replay',
+        action='store_false',
+        help='disables activation trajectories replay')
+    parser.add_argument(
+        '--rtplots',
+        action='store_true',
+        help='enables real time plots of metrics')
 
-    train_flag = True
-    train_type = int(sys.argv[1])  # 0: Batch, 1: NI, 2: NC, 3: NIC
+    args = parser.parse_args()
+    train_type = args.continual
+    epochs = args.epochs
+    profiler_tests = args.tests
+    train_replay = args.replay
+    enable_rtplot = args.rtplots
 
     with np.load('core50/features_norm.npz') as core50:
         core50_x = core50['x']
@@ -91,7 +115,12 @@ if __name__ == "__main__":
 
     context = True
     num_context = parameters["context_depth"]
-    epochs = 1  # epochs per sample for incremental learning
+
+    # Replay parameters
+    replay_size = (num_context * 2) + 1  # size of RNATs
+    replay_weights = []
+    replay_labels = []
+
     a_threshold = [parameters["insertion_threshold_episodic"], parameters["insertion_threshold_semantic"]]
 
     g_episodic = EpisodicGWR('episodic')
@@ -101,39 +130,14 @@ if __name__ == "__main__":
     g_semantic.init_network(core50_x[train['x'].values], s_labels, num_context)
 
     # profiling
+    profiler = Profiler()
     instances_seen = set()
     categories_seen = set()
     sessions_seen = set()
 
-    profiler = Profiler([
-        'episode',
-        'num_nodes_episodic',
-        'num_nodes_semantic',
-        'activity_episodic',
-        'activity_semantic',
-        'update_rate_episodic',
-        'update_rate_semantic',
-        'no_instances_seen',
-        'no_categories_seen',
-        'aqe_episodic',
-        'aqe_semantic',
-        'seen_accuracy_inst_episodic',
-        'seen_accuracy_cat_episodic',
-        'seen_accuracy_inst_semantic',
-        'seen_accuracy_cat_semantic',
-        'first_accuracy_inst_episodic',
-        'first_accuracy_cat_episodic',
-        'first_accuracy_inst_semantic',
-        'first_accuracy_cat_semantic',
-        'whole_accuracy_inst_episodic',
-        'whole_accuracy_cat_episodic',
-        'whole_accuracy_inst_semantic',
-        'whole_accuracy_cat_semantic'
-    ])
-
-    rtplot.plot(topic="num_nodes_episodic", refresh_rate=0.20)
-    rtplot.plot(topic="num_nodes_semantic", refresh_rate=0.01)
-    # rtplot.plot(topic="activity_episodic", refresh_rate=0.20, ylim_max=0.1)
+    if enable_rtplot:
+        rtplot.plot(topic="num_nodes_episodic", refresh_rate=0.20)
+        rtplot.plot(topic="num_nodes_semantic", refresh_rate=0.01)
 
     if train_type == 0:
         # Batch training
@@ -153,14 +157,6 @@ if __name__ == "__main__":
                               a_threshold[1], context, parameters, regulated=1)
 
     else:
-        # Incremental training New Instance NI
-        batch_size = 10  # number of samples per epoch
-        # Replay parameters
-        train_replay = False
-        replay_size = (num_context * 2) + 1  # size of RNATs
-        replay_weights = []
-        replay_labels = []
-
         n_episodes = 0
 
         # prepare batches
@@ -180,10 +176,6 @@ if __name__ == "__main__":
                 random.shuffle(batches)
             batches[0] = pd.concat([batches[0], batches[1]])
             del batches[1]
-
-        print('printing batches lens')
-        for b in batches:
-            print(len(b['instance'].values))
 
         # Train episodic memory
         for batch in tqdm(batches, desc='Batches'):
@@ -225,19 +217,17 @@ if __name__ == "__main__":
                     g_episodic, replay_size)
 
             # profiling
-            if PROFILING:
-                publish.send('episode')
-                # profiling['episode'].append(n_episodes)
-                for i in batch['instance'].unique():
-                    instances_seen.add(i)
-                for c in batch['category'].unique():
-                    categories_seen.add(c)
-                for s in batch['session'].unique():
-                    sessions_seen.add(s)
+            for i in batch['instance'].unique():
+                instances_seen.add(i)
+            for c in batch['category'].unique():
+                categories_seen.add(c)
+            for s in batch['session'].unique():
+                sessions_seen.add(s)
 
-                publish.send('no_instances_seen', len(instances_seen))
-                publish.send('no_categories_seen', len(categories_seen))
+            publish.send('no_instances_seen', len(instances_seen))
+            publish.send('no_categories_seen', len(categories_seen))
 
+            if profiler_tests:
                 if train_type == 1:  # NI
                     test_batch = train[train['session'].isin(sessions_seen)]
                 elif train_type == 2:  # NC
@@ -294,4 +284,4 @@ if __name__ == "__main__":
     print("Accuracy category episodic: %s, semantic: %s" %
           (g_episodic.test_accuracy[1], g_semantic.test_accuracy[1]))
 
-    profiler.save_all()
+    profiler.save_all('profile_{}_{}_{}'.format(train_type, int(g_semantic.test_accuracy[1]), date.today()))

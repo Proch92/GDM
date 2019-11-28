@@ -1,25 +1,21 @@
 import publish
-from functools import partial
 import pickle
 import time
 
 
 class Profiler(object):
-    def __init__(self, topics):
-        self.topics = topics
+    def __init__(self):
         self.buffers = {}
+        publish.subscribe_to_all(self.on_receive)
 
-        for topic in self.topics:
+    def on_receive(self, topic, val):
+        if topic not in self.buffers.keys():
             self.buffers[topic] = []
-            publish.subscribe(partial(self.on_receive, topic=topic), topic)
-
-    def on_receive(self, val, topic):
         self.buffers[topic].append(val)
 
-    def save_all(self):
-        for topic in self.topics:
-            with open('profiling/topics/' + topic + '.pkl', 'wb') as f:
-                pickle.dump(self.buffers[topic], f)
+    def save_all(self, name):
+        with open('profiling/' + name + '.pkl', 'wb') as f:
+            pickle.dump(self.buffers, f)
 
 
 def timeit(foo):
