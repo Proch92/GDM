@@ -149,8 +149,8 @@ class EpisodicGWR(GammaGWR):
         error_counter = np.zeros(self.max_epochs)
         previous_bmu = np.zeros((self.depth, self.dimension))
         previous_ind = -1
-        for epoch in tqdm(range(self.max_epochs), desc="Epochs"):
-            for iteration in tqdm(range(self.samples), desc="Samples"):
+        for epoch in tqdm(range(self.max_epochs), desc="Epochs", position=1):
+            for iteration in tqdm(range(self.samples), desc="Samples", position=2):
                 # if self.iterations % 100 == 0:
                 #    print('epoch: {} / {} - {:.2f}%'.format(epoch + 1, self.max_epochs, (iteration / self.samples) * 100))
 
@@ -176,7 +176,7 @@ class EpisodicGWR(GammaGWR):
                 a = math.exp(-b_distance)
                 publish.send('activity_' + self.name, a)
 
-                publish.send('update_rate_' + self.name, self.habn[b_index] * self.epsilon_b)
+                publish.send('update_rate_' + self.name, np.mean(self.habn) * self.epsilon_b)
 
                 # Store BMU at time t for t+1
                 previous_bmu = self.weights[b_index]

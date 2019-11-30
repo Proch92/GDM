@@ -138,6 +138,7 @@ if __name__ == "__main__":
     if enable_rtplot:
         rtplot.plot(topic="num_nodes_episodic", refresh_rate=0.20)
         rtplot.plot(topic="num_nodes_semantic", refresh_rate=0.01)
+        rtplot.plot(topic="update_rate_episodic", refresh_rate=0.20, ylim_max=0.02)
 
     if train_type == 0:
         # Batch training
@@ -178,7 +179,7 @@ if __name__ == "__main__":
             del batches[1]
 
         # Train episodic memory
-        for batch in tqdm(batches, desc='Batches'):
+        for batch in tqdm(batches, desc='Batches', position=0):
             # prepare labels
             ds_labels = np.zeros((len(e_labels), len(batch)))
             ds_labels[0] = batch['instance'].values

@@ -1,5 +1,6 @@
 import numpy as np
 import time
+from multiprocessing import shared_memory
 
 
 alphas = np.array([0.8, 0.4, 0.2])
@@ -27,5 +28,11 @@ t0 = time.time()
 c = [w - input_vector for w in weights]
 c = np.dot(alphas, c)
 c = np.linalg.norm(c, axis=1)
+t1 = time.time()
+print(t1 - t0)
+
+a = np.random.rand()
+t0 = time.time()
+shm = shared_memory.SharedMemory(create=True, size=weights.nbytes)
 t1 = time.time()
 print(t1 - t0)
