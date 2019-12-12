@@ -38,6 +38,10 @@ def replay_samples(net, size) -> (np.ndarray, np.ndarray):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='GDM on core50')
     parser.add_argument(
+        '--core',
+        required=True,
+        help='core50 features file')
+    parser.add_argument(
         '--continual',
         required=True,
         type=int,
@@ -70,11 +74,10 @@ if __name__ == "__main__":
     train_replay = args.replay
     enable_rtplot = args.rtplots
 
-    with np.load('core50/features_norm.npz') as core50:
+    with np.load(args.core) as core50:
         core50_x = core50['x']
         core50_instances = core50['instance']
         core50_categories = core50['category']
-        core50_categories = core50_categories - 1  # 0 indexing
         core50_sessions = core50['session']
 
     assert train_type < 4, "Invalid type of training."
