@@ -11,6 +11,9 @@ import random
 import math
 
 
+gpus = tf.config.experimental.list_logical_devices('GPU')
+
+
 def sentinel(foo):
     def wrapper(*args, **kwargs):
         print(foo.__name__)
@@ -23,7 +26,6 @@ def load_paths(path, shuffle=True):
     pkl_file = open(path, 'rb')
     paths = pickle.load(pkl_file)
     paths = paths[::4]
-    random.shuffle(paths)
     return paths
 
 
@@ -58,8 +60,8 @@ def extract_labels(paths):
 def train_extractor(dataset, labels, epochs):
     (instance, category, session) = labels
     num_classes = 50
-    BATCH_SIZE = 32
-    SPLIT_SIZE = BATCH_SIZE * 500
+    BATCH_SIZE = 8
+    SPLIT_SIZE = BATCH_SIZE * 100
 
     # prepare train and validation sets
     train_idxs = [i for i, v in enumerate(session) if v not in [3, 7, 10]]
@@ -94,32 +96,35 @@ def train_extractor(dataset, labels, epochs):
     extractor.summary()
     supervised.summary()
 
-    print('compiling')
     supervised.compile(
         optimizer=tf.keras.optimizers.RMSprop(),
         loss='categorical_crossentropy',
         metrics=['accuracy'])
-    print('done')
 
     val_onehot_y = tf.keras.utils.to_categorical(validation_y, num_classes=num_classes)
 
     indexes = list(range(len(train_x)))
 
-    splits = math.ceil(len(indexes) / SPLIT_SIZE)
-    for split in np.array_split(indexes, splits):
-        tx = train_x[split]
-        ty = train_y[split]
-        tx = tx.astype('float')
-        tx /= 255.0
+    for epoch in range(epochs):
+        print(f"{epoch}/{epochs} ")
+        random.shuffle(indexes)
 
-        onehot_y = tf.keras.utils.to_categorical(ty, num_classes=num_classes)
-        supervised.fit(
-            tx,
-            onehot_y,
-            batch_size=BATCH_SIZE,
-            epochs=epochs,
-            shuffle=True,
-            validation_data=(validation_x, val_onehot_y))
+        splits = math.ceil(len(indexes) / SPLIT_SIZE)
+        for split in np.array_split(indexes, splits):
+            tx = train_x[split]
+            ty = train_y[split]
+            tx = tx.astype('float')
+            tx /= 255.0
+
+            onehot_y = tf.keras.utils.to_categorical(ty, num_classes=num_classes)
+            supervised.fit(
+                tx,
+                onehot_y,
+                batch_size=BATCH_SIZE,
+                # validation_data=(validation_x, val_onehot_y)
+            )
+        print('evaluating on validation data')
+        supervised.evaluate(validation_x, val_onehot_y)
 
     return extractor
 
@@ -183,9 +188,10 @@ if __name__ == '__main__':
     dataset = load_core50(args.images, paths)
     labels = extract_labels(paths)
 
-    feature_extractor = train_extractor(dataset, labels, epochs=args.epochs)
-    if args.save_extractor:
-        feature_extractor.save('extractor_' + str(date.today()) + '.tf')
+    with tf.device(gpus[1].name):
+        feature_extractor = train_extractor(dataset, labels, epochs=args.epochs)
+        if args.save_extractor:
+            feature_extractor.save('extractor_' + str(date.today()) + '.tf')
 
-    features = extract_features(dataset, feature_extractor)
+        features = extract_features(dataset, feature_extractor)
     save_dataset(features, labels, args.out)
