@@ -45,7 +45,7 @@ def extract_labels(paths):
     # 0 indexing
     instance = [i - 1 for i in instance]
     session = [s - 1 for s in session]
-    category = [(i - 1) // 5.0 for i in instance]
+    category = [i // 5.0 for i in instance]
 
     instance = np.array(instance)
     session = np.array(session)
@@ -59,7 +59,7 @@ def train_extractor(dataset, labels, epochs):
     (instance, category, session) = labels
     num_classes = 50
     BATCH_SIZE = 32
-    SPLIT_SIZE = BATCH_SIZE * 2
+    SPLIT_SIZE = BATCH_SIZE * 500
 
     # prepare train and validation sets
     train_idxs = [i for i, v in enumerate(session) if v not in [3, 7, 10]]
@@ -77,12 +77,15 @@ def train_extractor(dataset, labels, epochs):
 
     extractor = tf.keras.Sequential([
         vgg,
-        tf.keras.layers.Conv2D(256, [4, 4])
+        tf.keras.layers.Conv2D(256, [4, 4], activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
+        tf.keras.layers.Dropout(0.5),
+        tf.keras.layers.Conv2D(256, [1, 1], kernel_regularizer=tf.keras.regularizers.l2(0.001))
     ])
 
     supervised = tf.keras.Sequential([
         extractor,
-        tf.keras.layers.Dropout(0.2),
+        tf.keras.layers.ReLU(),
+        tf.keras.layers.Dropout(0.5),
         tf.keras.layers.Conv2D(num_classes, [1, 1], activation='softmax'),
         tf.keras.layers.Flatten()
     ])
@@ -97,18 +100,17 @@ def train_extractor(dataset, labels, epochs):
         loss='categorical_crossentropy',
         metrics=['accuracy'])
     print('done')
-    std = train_x.std()
 
     val_onehot_y = tf.keras.utils.to_categorical(validation_y, num_classes=num_classes)
 
-    train = zip(train_x, train_y)
+    indexes = list(range(len(train_x)))
 
-    splits = math.ceil(len(train_y) / SPLIT_SIZE)
-    for split in np.array_split(train, splits):
-        (tx, ty) = split
+    splits = math.ceil(len(indexes) / SPLIT_SIZE)
+    for split in np.array_split(indexes, splits):
+        tx = train_x[split]
+        ty = train_y[split]
         tx = tx.astype('float')
         tx /= 255.0
-        tx /= std
 
         onehot_y = tf.keras.utils.to_categorical(ty, num_classes=num_classes)
         supervised.fit(
@@ -124,12 +126,23 @@ def train_extractor(dataset, labels, epochs):
 
 @sentinel
 def extract_features(dataset, extractor):
-    print('extracting features')
     extractor.summary()
 
-    features = extractor.predict_on_batch(dataset)
-    features = np.squeeze(features)
-    print(features.shape())
+    features = []
+    indexes = list(range(len(dataset)))
+    for split in np.array_split(indexes, 1000):
+        dsplit = dataset[split]
+        dsplit = dsplit.astype('float')
+        dsplit /= 255.0
+        preds = extractor.predict_on_batch(dsplit)
+        for pred in preds:
+            pred = np.squeeze(pred)
+            features.append(pred)
+
+    features = np.array(features)
+    print(features.shape)
+    std = features.std()
+    features /= std
 
     return features
 
@@ -156,6 +169,7 @@ if __name__ == '__main__':
         help='paths.pkl file')
     parser.add_argument(
         '--epochs',
+        type=int,
         default=1,
         help='number of epochs in extractor training')
     parser.add_argument(
@@ -171,7 +185,7 @@ if __name__ == '__main__':
 
     feature_extractor = train_extractor(dataset, labels, epochs=args.epochs)
     if args.save_extractor:
-        feature_extractor.save('extractor_' + date.today() + '.tf')
+        feature_extractor.save('extractor_' + str(date.today()) + '.tf')
 
     features = extract_features(dataset, feature_extractor)
     save_dataset(features, labels, args.out)
