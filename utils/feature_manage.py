@@ -9,6 +9,7 @@ from tqdm import tqdm
 import imageio
 import random
 import math
+from core50_loader import Core50_Dataset
 
 
 gpus = tf.config.experimental.list_logical_devices('GPU')
@@ -22,54 +23,9 @@ def sentinel(foo):
 
 
 @sentinel
-def load_paths(path, shuffle=True):
-    pkl_file = open(path, 'rb')
-    paths = pickle.load(pkl_file)
-    paths = paths[::4]
-    return paths
-
-
-@sentinel
-def load_core50(core50_path, paths):
-    dataset = np.ndarray((len(paths), 128, 128, 3), np.uint8)
-
-    for i in tqdm(range(len(paths))):
-        dataset[i] = imageio.imread(os.path.join(core50_path, paths[i]))
-
-    print(f'loaded core50. dataset shape {dataset.shape} and dtype {dataset.dtype}')
-    return dataset
-
-
-@sentinel
-def extract_labels(paths):
-    instance = [int(re.search('/o(.+?)/', path).group(1)) for path in paths]
-    session = [int(re.search('s(.+?)/', path).group(1)) for path in paths]
-    # 0 indexing
-    instance = [i - 1 for i in instance]
-    session = [s - 1 for s in session]
-    category = [i // 5.0 for i in instance]
-
-    instance = np.array(instance)
-    session = np.array(session)
-    category = np.array(category)
-
-    return (instance, category, session)
-
-
-@sentinel
-def train_extractor(dataset, labels, epochs):
-    (instance, category, session) = labels
+def train_extractor(dataset, epochs):
     num_classes = 50
-    BATCH_SIZE = 8
-    SPLIT_SIZE = BATCH_SIZE * 100
-
-    # prepare train and validation sets
-    train_idxs = [i for i, v in enumerate(session) if v not in [3, 7, 10]]
-    validation_idxs = [i for i, v in enumerate(session) if v in [3, 7, 10]]
-    train_x = dataset[train_idxs]
-    train_y = instance[train_idxs]
-    validation_x = dataset[validation_idxs]
-    validation_y = instance[validation_idxs]
+    BATCH_SIZE = 32
 
     # create new model
     SHAPE = (128, 128, 3)
@@ -92,64 +48,33 @@ def train_extractor(dataset, labels, epochs):
         tf.keras.layers.Flatten()
     ])
 
-    vgg.summary()
-    extractor.summary()
-    supervised.summary()
-
     supervised.compile(
         optimizer=tf.keras.optimizers.RMSprop(),
         loss='categorical_crossentropy',
         metrics=['accuracy'])
 
-    val_onehot_y = tf.keras.utils.to_categorical(validation_y, num_classes=num_classes)
-
-    indexes = list(range(len(train_x)))
-
-    for epoch in range(epochs):
-        print(f"{epoch}/{epochs} ")
-        random.shuffle(indexes)
-
-        splits = math.ceil(len(indexes) / SPLIT_SIZE)
-        for split in np.array_split(indexes, splits):
-            tx = train_x[split]
-            ty = train_y[split]
-            tx = tx.astype('float')
-            tx /= 255.0
-
-            onehot_y = tf.keras.utils.to_categorical(ty, num_classes=num_classes)
-            supervised.fit(
-                tx,
-                onehot_y,
-                batch_size=BATCH_SIZE,
-                # validation_data=(validation_x, val_onehot_y)
-            )
-        print('evaluating on validation data')
-        supervised.evaluate(validation_x, val_onehot_y)
+    dataset.shuffle()
+    supervised.fit_generator(
+        dataset.train_gen_forever(BATCH_SIZE),
+        steps_per_epoch=math.ceil(dataset.train_len / BATCH_SIZE),
+        epochs=epochs,
+        validation_data=dataset.test(sample=0.3)
+    )
 
     return extractor
 
 
 @sentinel
 def extract_features(dataset, extractor):
-    extractor.summary()
+    batch_size = 512
+    preds = extractor.predict_generator(dataset.x_gen(batch_size), steps=math.ceil(len(dataset) / batch_size))
+    preds = np.squeeze(preds)
 
-    features = []
-    indexes = list(range(len(dataset)))
-    for split in np.array_split(indexes, 1000):
-        dsplit = dataset[split]
-        dsplit = dsplit.astype('float')
-        dsplit /= 255.0
-        preds = extractor.predict_on_batch(dsplit)
-        for pred in preds:
-            pred = np.squeeze(pred)
-            features.append(pred)
+    print(preds.shape)
+    std = preds.std()
+    preds /= std
 
-    features = np.array(features)
-    print(features.shape)
-    std = features.std()
-    features /= std
-
-    return features
+    return preds
 
 
 @sentinel
@@ -184,12 +109,10 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    paths = load_paths(args.paths)
-    dataset = load_core50(args.images, paths)
-    labels = extract_labels(paths)
+    dataset = Core50_Dataset(args.images, args.paths)
 
     with tf.device(gpus[1].name):
-        feature_extractor = train_extractor(dataset, labels, epochs=args.epochs)
+        feature_extractor = train_extractor(dataset, epochs=args.epochs)
         if args.save_extractor:
             feature_extractor.save('extractor_' + str(date.today()) + '.tf')
 

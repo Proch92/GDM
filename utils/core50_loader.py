@@ -8,12 +8,21 @@ import imageio
 import tensorflow as tf
 
 
+def batches(iterable, n):
+    l = len(iterable)
+    for ndx in range(0, l, n):
+        yield iterable[ndx:min(ndx + n, l)]
+
+
 class Core50_Dataset():
     def __init__(self, base_path, paths_file):
         self.base_path = base_path
         self.paths_file = paths_file
         self.load_labels()
         self.split_train_test()
+
+    def __len__(self):
+        return self.num_samples
 
     def load_labels(self):
         pkl_file = open(self.paths_file, 'rb')
@@ -39,7 +48,7 @@ class Core50_Dataset():
         return dataset
 
     def shuffle(self):
-        z = zip(self.paths, self.instance, self.session, self.category)
+        z = list(zip(self.paths, self.instance, self.session, self.category))
         random.shuffle(z)
         self.paths, self.instance, self.session, self.category = zip(*z)
 
@@ -47,18 +56,45 @@ class Core50_Dataset():
         train_idx = [idx for idx in range(self.num_samples) if self.session[idx] not in [3, 7, 10]]
         test_idx = [idx for idx in range(self.num_samples) if self.session[idx] in [3, 7, 10]]
 
-        self.train_paths = self.paths[train_idx]
-        self.train_y = self.instance[train_idx]
-        self.test_paths = self.paths[test_idx]
-        self.test_y = self.instance[test_idx]
+        self.train_paths = np.take(self.paths, train_idx, axis=0)
+        self.train_y = np.take(self.instance, train_idx, axis=0)
+        self.test_paths = np.take(self.paths, test_idx, axis=0)
+        self.test_y = np.take(self.instance, test_idx, axis=0)
+        
+        self.train_len = len(self.train_paths)
+        self.test_len = len(self.test_paths)
 
-    def train(self, batch_size):
-        print(f'expected batch size: {128 * 128 * 3 * 32 * batch_size} bytes')
-        num_batches = math.ceil(self.num_samples / batch_size)
-        for batch in np.array_split(zip(self.train_paths, self.train_y), num_batches):
-            paths, y = batch
+    def x_gen(self, batch_size):
+        for batch in batches(self.paths, batch_size):
+            x = self.load(batch)
+            x = x.astype('float32')
+            x /= 255.0
+            yield x
+
+    def train_gen_forever(self, batch_size):
+        while True:
+            for val in self.train_gen(batch_size):
+                yield val
+
+    def train_gen(self, batch_size):
+        dataset = list(zip(self.train_paths, self.train_y))
+        for batch in batches(dataset, batch_size):
+            paths, y = zip(*batch)
             x = self.load(paths)
             x = x.astype('float32')
             x /= 255.0
             y = tf.keras.utils.to_categorical(y, num_classes=50)
             yield (x, y)
+
+    def test(self, sample=1):
+        tset = list(zip(self.test_paths, self.test_y))
+        sample_population = int(len(self.test_paths) * sample)
+        sampled = random.sample(tset, sample_population)
+
+        paths, y = zip(*sampled)
+        x = self.load(paths)
+        x = x.astype('float32')
+        x /= 255.0
+        y = tf.keras.utils.to_categorical(y, num_classes=50)
+        return (x, y)
+
