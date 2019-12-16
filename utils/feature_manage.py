@@ -1,13 +1,7 @@
 import argparse
 import tensorflow as tf
 from datetime import date
-import pickle
 import numpy as np
-import re
-import os
-from tqdm import tqdm
-import imageio
-import random
 import math
 from core50_loader import Core50_Dataset
 
@@ -78,8 +72,10 @@ def extract_features(dataset, extractor):
 
 
 @sentinel
-def save_dataset(features, labels, path):
-    (instance, category, session) = labels
+def save_dataset(features, dataset, path):
+    instance = dataset.instance
+    category = dataset.category
+    session = dataset.session
     np.savez(path, x=features, instance=instance, category=category, session=session)
 
 
@@ -111,10 +107,16 @@ if __name__ == '__main__':
 
     dataset = Core50_Dataset(args.images, args.paths)
 
-    with tf.device(gpus[1].name):
+    if len(gpus) > 0:
+        with tf.device(gpus[1].name):
+            feature_extractor = train_extractor(dataset, epochs=args.epochs)
+            if args.save_extractor:
+                feature_extractor.save('extractor_' + str(date.today()) + '.tf')
+            features = extract_features(dataset, feature_extractor)
+    else:
         feature_extractor = train_extractor(dataset, epochs=args.epochs)
         if args.save_extractor:
             feature_extractor.save('extractor_' + str(date.today()) + '.tf')
-
         features = extract_features(dataset, feature_extractor)
-    save_dataset(features, labels, args.out)
+
+    save_dataset(features, dataset, args.out)

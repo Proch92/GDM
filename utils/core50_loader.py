@@ -2,16 +2,15 @@ import pickle
 import re
 import numpy as np
 import random
-import math
 import os
 import imageio
 import tensorflow as tf
 
 
 def batches(iterable, n):
-    l = len(iterable)
-    for ndx in range(0, l, n):
-        yield iterable[ndx:min(ndx + n, l)]
+    ln = len(iterable)
+    for ndx in range(0, ln, n):
+        yield iterable[ndx:min(ndx + n, ln)]
 
 
 class Core50_Dataset():
@@ -60,7 +59,7 @@ class Core50_Dataset():
         self.train_y = np.take(self.instance, train_idx, axis=0)
         self.test_paths = np.take(self.paths, test_idx, axis=0)
         self.test_y = np.take(self.instance, test_idx, axis=0)
-        
+
         self.train_len = len(self.train_paths)
         self.test_len = len(self.test_paths)
 
