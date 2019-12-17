@@ -1,0 +1,1 @@
+python utils/feature_manage.py --images core50/core50_128x128/ --paths core50/paths.pkl --out core50/core312.npz --save_extractor --epochs 1
