@@ -7,6 +7,7 @@ from core50_loader import Core50_Dataset
 
 
 gpus = tf.config.experimental.list_logical_devices('GPU')
+use_specific_gpu = -1
 
 
 def sentinel(foo):
@@ -60,15 +61,21 @@ def train_extractor(dataset, epochs):
 
 @sentinel
 def extract_features(dataset, extractor):
-    batch_size = 512
-    preds = extractor.predict_generator(dataset.x_gen(batch_size), steps=math.ceil(len(dataset) / batch_size))
-    preds = np.squeeze(preds)
+    batch_size = 32
+    features = None
+    for batch in dataset.x_gen(batch_size):
+        preds = extractor.predict_on_batch(batch)
+        preds = np.squeeze(preds)
+        if features is None:
+            features = preds
+        else:
+            features = np.vstack((features, preds))
 
-    print(preds.shape)
-    std = preds.std()
-    preds /= std
+    print(features.shape)
+    std = features.std()
+    features /= std
 
-    return preds
+    return features
 
 
 @sentinel
@@ -107,16 +114,17 @@ if __name__ == '__main__':
 
     dataset = Core50_Dataset(args.images, args.paths)
 
-    if len(gpus) > 0:
-        with tf.device(gpus[1].name):
-            feature_extractor = train_extractor(dataset, epochs=args.epochs)
-            if args.save_extractor:
-                feature_extractor.save('extractor_' + str(date.today()) + '.tf')
-            features = extract_features(dataset, feature_extractor)
-    else:
+    def train_and_extract():
         feature_extractor = train_extractor(dataset, epochs=args.epochs)
         if args.save_extractor:
             feature_extractor.save('extractor_' + str(date.today()) + '.tf')
-        features = extract_features(dataset, feature_extractor)
+        return extract_features(dataset, feature_extractor)
+
+    if len(gpus) > 0 and use_specific_gpu >= 0:
+        with tf.device(gpus[use_specific_gpu].name):
+            features = train_and_extract()
+    else:
+        features = train_and_extract()
 
     save_dataset(features, dataset, args.out)
+
