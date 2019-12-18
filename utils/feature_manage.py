@@ -7,7 +7,7 @@ from core50_loader import Core50_Dataset
 
 
 gpus = tf.config.experimental.list_logical_devices('GPU')
-use_specific_gpu = 1
+use_specific_gpu = -1
 
 
 def sentinel(foo):

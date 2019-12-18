@@ -76,10 +76,11 @@ class Core50_Dataset():
                 yield val
 
     def train_gen(self, batch_size, shuffle=True):
-        batch_idxs = batches(list(range(len(self.train_paths))), batch_size)
+        index_batches = batches(list(range(len(self.train_paths))), batch_size)
         if shuffle:
-            random.shuffle(batch_list)
-        for batch in batch_idxs:
+            index_batches = list(index_batches)
+            random.shuffle(index_batches)
+        for batch in index_batches:
             paths = self.train_paths[batch]
             y = self.train_y[batch]
             x = self.load(paths)
