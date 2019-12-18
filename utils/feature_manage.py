@@ -7,7 +7,7 @@ from core50_loader import Core50_Dataset
 
 
 gpus = tf.config.experimental.list_logical_devices('GPU')
-use_specific_gpu = -1
+use_specific_gpu = 1
 
 
 def sentinel(foo):
@@ -30,15 +30,18 @@ def train_extractor(dataset, epochs):
 
     extractor = tf.keras.Sequential([
         vgg,
-        tf.keras.layers.Conv2D(256, [4, 4], activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
-        tf.keras.layers.Dropout(0.5),
-        tf.keras.layers.Conv2D(256, [1, 1], kernel_regularizer=tf.keras.regularizers.l2(0.001))
+        tf.keras.layers.Conv2D(256, [1, 1], activation='relu'),
+        tf.keras.layers.Dropout(0.3),
+        tf.keras.layers.Conv2D(256, [1, 1], activation='relu'),
+        tf.keras.layers.Dropout(0.3),
+        tf.keras.layers.Conv2D(256, [1, 1], activation='relu'),
+        tf.keras.layers.Dropout(0.3),
+        tf.keras.layers.Conv2D(256, [4, 4])
     ])
 
     supervised = tf.keras.Sequential([
         extractor,
         tf.keras.layers.ReLU(),
-        tf.keras.layers.Dropout(0.5),
         tf.keras.layers.Conv2D(num_classes, [1, 1], activation='softmax'),
         tf.keras.layers.Flatten()
     ])
@@ -47,8 +50,8 @@ def train_extractor(dataset, epochs):
         optimizer=tf.keras.optimizers.RMSprop(),
         loss='categorical_crossentropy',
         metrics=['accuracy'])
+    supervised.summary()
 
-    dataset.shuffle()
     supervised.fit_generator(
         dataset.train_gen_forever(BATCH_SIZE),
         steps_per_epoch=math.ceil(dataset.train_len / BATCH_SIZE),
