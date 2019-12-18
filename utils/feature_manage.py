@@ -31,17 +31,14 @@ def train_extractor(dataset, epochs):
     extractor = tf.keras.Sequential([
         vgg,
         tf.keras.layers.Conv2D(256, [1, 1], activation='relu'),
-        tf.keras.layers.Dropout(0.3),
-        tf.keras.layers.Conv2D(256, [1, 1], activation='relu'),
-        tf.keras.layers.Dropout(0.3),
-        tf.keras.layers.Conv2D(256, [1, 1], activation='relu'),
-        tf.keras.layers.Dropout(0.3),
+        tf.keras.layers.Dropout(0.2),
         tf.keras.layers.Conv2D(256, [4, 4])
     ])
 
     supervised = tf.keras.Sequential([
         extractor,
         tf.keras.layers.ReLU(),
+        tf.keras.layers.Dropout(0.2),
         tf.keras.layers.Conv2D(num_classes, [1, 1], activation='softmax'),
         tf.keras.layers.Flatten()
     ])
@@ -52,6 +49,7 @@ def train_extractor(dataset, epochs):
         metrics=['accuracy'])
     supervised.summary()
 
+    dataset.shuffle()
     supervised.fit_generator(
         dataset.train_gen_forever(BATCH_SIZE),
         steps_per_epoch=math.ceil(dataset.train_len / BATCH_SIZE),
