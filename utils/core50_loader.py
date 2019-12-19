@@ -34,7 +34,7 @@ class Core50_Dataset():
 
         instance = [i - 1 for i in instance]
         session = [s - 1 for s in session]
-        category = [(i - 1) // 5.0 for i in instance]
+        category = [i // 5.0 for i in instance]
 
         self.instance = np.array(instance)
         self.session = np.array(session)
