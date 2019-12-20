@@ -80,6 +80,9 @@ if __name__ == "__main__":
         core50_categories = core50['category']
         core50_sessions = core50['session']
 
+    # fix categories bug
+    core50_categories = np.array([i // 5 for i in core50_instances])
+
     assert train_type < 4, "Invalid type of training."
     assert np.all(core50_instances < 50), "there are instances > 49"
     assert np.all(core50_instances >= 0), "there are instances < 0"
