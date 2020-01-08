@@ -34,7 +34,7 @@ class Core50_Dataset():
 
         instance = [i - 1 for i in instance]
         session = [s - 1 for s in session]
-        category = [(i - 1) // 5.0 for i in instance]
+        category = [i // 5.0 for i in instance]
 
         self.instance = np.array(instance)
         self.session = np.array(session)
@@ -75,10 +75,14 @@ class Core50_Dataset():
             for val in self.train_gen(batch_size):
                 yield val
 
-    def train_gen(self, batch_size):
-        dataset = list(zip(self.train_paths, self.train_y))
-        for batch in batches(dataset, batch_size):
-            paths, y = zip(*batch)
+    def train_gen(self, batch_size, shuffle=True):
+        index_batches = batches(list(range(len(self.train_paths))), batch_size)
+        if shuffle:
+            index_batches = list(index_batches)
+            random.shuffle(index_batches)
+        for batch in index_batches:
+            paths = self.train_paths[batch]
+            y = self.train_y[batch]
             x = self.load(paths)
             x = x.astype('float32')
             x /= 255.0
@@ -86,11 +90,12 @@ class Core50_Dataset():
             yield (x, y)
 
     def test(self, sample=1):
-        tset = list(zip(self.test_paths, self.test_y))
         sample_population = int(len(self.test_paths) * sample)
-        sampled = random.sample(tset, sample_population)
+        sampled = random.sample(list(range(len(self.test_paths))), sample_population)
 
-        paths, y = zip(*sampled)
+        paths = self.test_paths[sampled]
+        y = self.test_y[sampled]
+
         x = self.load(paths)
         x = x.astype('float32')
         x /= 255.0

@@ -4,9 +4,10 @@ import random
 import sklearn
 from sklearn import svm
 from sklearn.cluster import KMeans
+import sys
 
 
-with np.load('core50/features.npz') as core50:
+with np.load(sys.argv[1]) as core50:
     core50_x = core50['x']
     core50_instances = core50['instance']
     core50_sessions = core50['session']

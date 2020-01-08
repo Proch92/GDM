@@ -27,24 +27,28 @@ def train_extractor(dataset, epochs):
     vgg = tf.keras.applications.VGG16(
         input_shape=SHAPE, include_top=False, weights='imagenet')
     vgg.trainable = False
+    vgg.summary()
 
     extractor = tf.keras.Sequential([
         vgg,
-        tf.keras.layers.Conv2D(256, [4, 4], activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
-        tf.keras.layers.Dropout(0.5),
-        tf.keras.layers.Conv2D(256, [1, 1], kernel_regularizer=tf.keras.regularizers.l2(0.001))
+        tf.keras.layers.Conv2D(256, [3, 3], padding='same', activation='relu'),
+        tf.keras.layers.Conv2D(256, [3, 3], padding='same', activation='relu'),
+        tf.keras.layers.MaxPool2D((2, 2)),
+        tf.keras.layers.Conv2D(256, [3, 3], padding='same', activation='relu'),
+        tf.keras.layers.Conv2D(256, [3, 3], padding='same', activation='relu'),
+        tf.keras.layers.MaxPool2D((2, 2))
     ])
+    extractor.summary()
 
     supervised = tf.keras.Sequential([
         extractor,
-        tf.keras.layers.ReLU(),
-        tf.keras.layers.Dropout(0.5),
         tf.keras.layers.Conv2D(num_classes, [1, 1], activation='softmax'),
         tf.keras.layers.Flatten()
     ])
+    supervised.summary()
 
     supervised.compile(
-        optimizer=tf.keras.optimizers.RMSprop(),
+        optimizer=tf.keras.optimizers.SGD(),
         loss='categorical_crossentropy',
         metrics=['accuracy'])
 
