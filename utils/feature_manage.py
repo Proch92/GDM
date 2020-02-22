@@ -48,9 +48,9 @@ def train_extractor(dataset, epochs):
     ])
     supervised.summary()
 
-    def compile_and_fit():
+    def compile_and_fit(lr):
         supervised.compile(
-            optimizer=tf.keras.optimizers.SGD(),
+            optimizer=tf.keras.optimizers.SGD(learning_rate=lr),
             loss='categorical_crossentropy',
             metrics=['accuracy'])
 
@@ -58,11 +58,11 @@ def train_extractor(dataset, epochs):
         supervised.fit_generator(
             dataset.train_gen_forever(BATCH_SIZE),
             steps_per_epoch=math.ceil(dataset.train_len / BATCH_SIZE),
-            epochs=epochs,
+            epochs=epochs * 2,
             validation_data=dataset.test(sample=0.3)
         )
 
-    compile_and_fit()
+    compile_and_fit(0.01)
 
     LAYERS_TO_UNFREEZE = 10
     vgg.trainable = True
@@ -70,7 +70,7 @@ def train_extractor(dataset, epochs):
         for layer in vgg.layers[:-freeze_layers_up_to]:
             layer.trainable = False
 
-        compile_and_fit()
+        compile_and_fit(0.001)
 
     return extractor
 
