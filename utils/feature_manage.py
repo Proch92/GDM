@@ -7,7 +7,6 @@ from core50_loader import Core50_Dataset
 
 
 gpus = tf.config.experimental.list_logical_devices('GPU')
-use_specific_gpu = -1
 
 
 def sentinel(foo):
@@ -126,6 +125,11 @@ if __name__ == '__main__':
         '--save_extractor',
         action='store_true',
         help='save the extractor model')
+    parser.add_argument(
+        '--gpu',
+        type=int,
+        default=-1,
+        help='use a specific gpu (0-indexed)')
 
     args = parser.parse_args()
 
@@ -138,6 +142,7 @@ if __name__ == '__main__':
         dataset = Core50_Dataset(args.images, args.paths, fps5=True)
         return extract_features(dataset, feature_extractor)
 
+    use_specific_gpu = args.gpu
     if len(gpus) > 0 and use_specific_gpu >= 0:
         with tf.device(gpus[use_specific_gpu].name):
             features = train_and_extract()
