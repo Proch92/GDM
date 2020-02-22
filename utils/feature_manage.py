@@ -31,18 +31,20 @@ def train_extractor(dataset, epochs):
 
     extractor = tf.keras.Sequential([
         vgg,
-        tf.keras.layers.Conv2D(256, [3, 3], padding='same', activation='relu'),
-        tf.keras.layers.Conv2D(256, [3, 3], padding='same', activation='relu'),
+        tf.keras.layers.Conv2D(256, [3, 3], padding='same', activation='relu', activity_regularizer=tf.keras.regularizers.L1L2()),
+        tf.keras.layers.Conv2D(256, [3, 3], padding='same', activation='relu', activity_regularizer=tf.keras.regularizers.L1L2()),
+        tf.keras.layers.Dropout(0.5),
         tf.keras.layers.MaxPool2D((2, 2)),
-        tf.keras.layers.Conv2D(256, [3, 3], padding='same', activation='relu'),
-        tf.keras.layers.Conv2D(256, [3, 3], padding='same', activation='relu'),
+        tf.keras.layers.Conv2D(256, [3, 3], padding='same', activation='relu', activity_regularizer=tf.keras.regularizers.L1L2()),
+        tf.keras.layers.Conv2D(256, [3, 3], padding='same', activation='relu', activity_regularizer=tf.keras.regularizers.L1L2()),
+        tf.keras.layers.Dropout(0.5),
         tf.keras.layers.MaxPool2D((2, 2))
     ])
     extractor.summary()
 
     supervised = tf.keras.Sequential([
         extractor,
-        tf.keras.layers.Conv2D(num_classes, [1, 1], activation='softmax'),
+        tf.keras.layers.Conv2D(num_classes, [1, 1], activation='softmax', activity_regularizer=tf.keras.regularizers.L1L2()),
         tf.keras.layers.Flatten()
     ])
     supervised.summary()
@@ -116,12 +118,13 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    dataset = Core50_Dataset(args.images, args.paths)
-
     def train_and_extract():
+        dataset = Core50_Dataset(args.images, args.paths, fps5=False)
         feature_extractor = train_extractor(dataset, epochs=args.epochs)
         if args.save_extractor:
             feature_extractor.save('extractor_' + str(date.today()) + '.tf')
+
+        dataset = Core50_Dataset(args.images, args.paths, fps5=True)
         return extract_features(dataset, feature_extractor)
 
     if len(gpus) > 0 and use_specific_gpu >= 0:
@@ -130,5 +133,6 @@ if __name__ == '__main__':
     else:
         features = train_and_extract()
 
+    dataset = Core50_Dataset(args.images, args.paths, fps5=True)
     save_dataset(features, dataset, args.out)
 

@@ -14,7 +14,8 @@ def batches(iterable, n):
 
 
 class Core50_Dataset():
-    def __init__(self, base_path, paths_file):
+    def __init__(self, base_path, paths_file, fps5=False):
+        self.fps5 = fps5
         self.base_path = base_path
         self.paths_file = paths_file
         self.load_labels()
@@ -26,7 +27,8 @@ class Core50_Dataset():
     def load_labels(self):
         pkl_file = open(self.paths_file, 'rb')
         self.paths = pickle.load(pkl_file)
-        self.paths = self.paths[::4]
+        if self.fps5:
+            self.paths = self.paths[::4]
         self.num_samples = len(self.paths)
 
         instance = [int(re.search('/o(.+?)/', path).group(1)) for path in self.paths]
