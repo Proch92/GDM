@@ -5,6 +5,7 @@ import sys
 
 if len(sys.argv) < 3:
     print('usage: {} infile out_file_name'.format(sys.argv[0]))
+    exit(0)
 file = sys.argv[1]
 
 with open(file, 'rb') as f:
@@ -62,29 +63,35 @@ plt.savefig('media/' + sys.argv[2] + '.png')
 
 
 if 'seen_accuracy_inst_episodic' in profile:
-    fig, axs = plt.subplots(3, 1)
-    fig.subplots_adjust(hspace=0.5)
+    # fig, axs = plt.subplots(3, 1)
+    # fig.subplots_adjust(hspace=0.5)
 
-    axs[0].set_title('test acc batches seen')
-    axs[0].plot(profile['seen_accuracy_inst_episodic'], label='inst epis')
-    axs[0].plot(profile['seen_accuracy_cat_episodic'], label='cat epis')
-    axs[0].plot(profile['seen_accuracy_inst_semantic'], label='inst sem')
-    axs[0].plot(profile['seen_accuracy_cat_semantic'], label='cat sem')
+    fig, ax = plt.subplots()
+    ax.set_title('test acc batches seen')
+    ax.plot(profile['seen_accuracy_inst_episodic'], label='inst epis')
+    ax.plot(profile['seen_accuracy_cat_episodic'], label='cat epis')
+    ax.plot(profile['seen_accuracy_inst_semantic'], label='inst sem')
+    ax.plot(profile['seen_accuracy_cat_semantic'], label='cat sem')
+    ax.legend()
 
-    axs[1].set_title('test acc first batch')
-    axs[1].plot(profile['first_accuracy_inst_episodic'], label='inst epis')
-    axs[1].plot(profile['first_accuracy_cat_episodic'], label='cat epis')
-    axs[1].plot(profile['first_accuracy_inst_semantic'], label='inst sem')
-    axs[1].plot(profile['first_accuracy_cat_semantic'], label='cat sem')
+    plt.savefig('media/accuracies_batchseen' + sys.argv[2] + '.png')
 
-    axs[2].set_title('test acc')
-    axs[2].plot(profile['whole_accuracy_inst_episodic'], label='inst epis')
-    axs[2].plot(profile['whole_accuracy_cat_episodic'], label='cat epis')
-    axs[2].plot(profile['whole_accuracy_inst_semantic'], label='inst sem')
-    axs[2].plot(profile['whole_accuracy_cat_semantic'], label='cat sem')
+    fig, ax = plt.subplots()
+    ax.set_title('test acc first batch')
+    ax.plot(profile['first_accuracy_inst_episodic'], label='inst epis')
+    ax.plot(profile['first_accuracy_cat_episodic'], label='cat epis')
+    ax.plot(profile['first_accuracy_inst_semantic'], label='inst sem')
+    ax.plot(profile['first_accuracy_cat_semantic'], label='cat sem')
+    ax.legend()
 
-    axs[0].legend()
-    axs[1].legend()
-    axs[2].legend()
+    plt.savefig('media/accuracies_firstbatch' + sys.argv[2] + '.png')
 
-    plt.savefig('media/accuracies' + sys.argv[2] + '.png')
+    fig, ax = plt.subplots()
+    ax.set_title('test acc')
+    ax.plot(profile['whole_accuracy_inst_episodic'], label='inst epis')
+    ax.plot(profile['whole_accuracy_cat_episodic'], label='cat epis')
+    ax.plot(profile['whole_accuracy_inst_semantic'], label='inst sem')
+    ax.plot(profile['whole_accuracy_cat_semantic'], label='cat sem')
+    ax.legend()
+
+    plt.savefig('media/accuracies_wholetest' + sys.argv[2] + '.png')

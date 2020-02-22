@@ -16,7 +16,7 @@ import rtplot
 from profiling import Profiler
 import publish
 import argparse
-from datetime import date
+from datetime import datetime
 
 
 def replay_samples(net, size) -> (np.ndarray, np.ndarray):
@@ -291,4 +291,4 @@ if __name__ == "__main__":
     print("Accuracy category episodic: %s, semantic: %s" %
           (g_episodic.test_accuracy[1], g_semantic.test_accuracy[1]))
 
-    profiler.save_all('profile_{}_{}_{}'.format(train_type, int(g_semantic.test_accuracy[1]), date.today()))
+    profiler.save_all('profile_{}_{}_{}'.format(train_type, int(g_semantic.test_accuracy[1]), datetime.today()))
