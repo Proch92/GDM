@@ -292,3 +292,4 @@ if __name__ == "__main__":
           (g_episodic.test_accuracy[1], g_semantic.test_accuracy[1]))
 
     profiler.save_all('profile_{}_{}_{}'.format(train_type, int(g_semantic.test_accuracy[1]), datetime.today()))
+
