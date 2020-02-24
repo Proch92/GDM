@@ -88,6 +88,8 @@ if __name__ == "__main__":
     assert np.all(core50_instances >= 0), "there are instances < 0"
     assert np.all(core50_categories < 10), "there are categories > 9"
     assert np.all(core50_categories >= 0), "there are categories < 0"
+    assert np.all(core50_categories < 11), "there are sessions > 10"
+    assert np.all(core50_categories >= 0), "there are sessions < 0"
     assert len(np.unique(core50_instances)
                ) == 50, "number of unique instances != 50"
     assert len(np.unique(core50_categories)
@@ -103,8 +105,8 @@ if __name__ == "__main__":
         'session': core50_sessions
     })
 
-    test = ds[ds['session'].isin([3, 7, 10])]
-    train = ds[ds['session'].isin([1, 2, 4, 5, 6, 8, 9, 11])]
+    test = ds[ds['session'].isin([2, 6, 9])]
+    train = ds[ds['session'].isin([0, 1, 3, 4, 5, 7, 8, 10])]
 
     '''
     Episodic-GWR supports multi-class neurons.
@@ -176,13 +178,24 @@ if __name__ == "__main__":
             batches[0] = pd.concat([batches[0], batches[1]])
             del batches[1]
         elif train_type == 3:  # NIC
-            batches = train.groupby('instance')
+            batches = train.groupby(['session', 'instance'])
+            print(len(batches))
             batches = [batch for _, batch in batches]
-            random.shuffle(batches)
-            while(batches[0]['category'].values[0] == batches[1]['category'].values[0]):
-                random.shuffle(batches)
-            batches[0] = pd.concat([batches[0], batches[1]])
-            del batches[1]
+            # while(batches[0]['category'].values[0] == batches[1]['category'].values[0]):
+            #     random.shuffle(batches)
+            for i in range(0, 400, 5):
+                batches[i] = pd.concat([
+                    batches[i],
+                    batches[i + 1],
+                    batches[i + 2],
+                    batches[i + 3],
+                    batches[i + 4]
+                ])
+            for i in range(1, 81):
+                del batches[i]
+                del batches[i]
+                del batches[i]
+                del batches[i]
 
         # Train episodic memory
         for batch in tqdm(batches, desc='Batches', position=0):
