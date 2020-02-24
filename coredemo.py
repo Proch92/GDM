@@ -179,7 +179,6 @@ if __name__ == "__main__":
             del batches[1]
         elif train_type == 3:  # NIC
             batches = train.groupby(['session', 'instance'])
-            print(len(batches))
             batches = [batch for _, batch in batches]
             # while(batches[0]['category'].values[0] == batches[1]['category'].values[0]):
             #     random.shuffle(batches)
