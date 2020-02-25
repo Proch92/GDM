@@ -8,7 +8,6 @@ gwr-tb :: Episodic-GWR
 import numpy as np
 import math
 from gammagwr import GammaGWR
-from tqdm import tqdm
 import publish
 
 
@@ -149,8 +148,8 @@ class EpisodicGWR(GammaGWR):
         error_counter = np.zeros(self.max_epochs)
         previous_bmu = np.zeros((self.depth, self.dimension))
         previous_ind = -1
-        for epoch in tqdm(range(self.max_epochs), desc="Epochs", position=1):
-            for iteration in tqdm(range(self.samples), desc="Samples", position=2):
+        for epoch in range(self.max_epochs):
+            for iteration in range(self.samples):
                 # if self.iterations % 100 == 0:
                 #    print('epoch: {} / {} - {:.2f}%'.format(epoch + 1, self.max_epochs, (iteration / self.samples) * 100))
 

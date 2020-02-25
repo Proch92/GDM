@@ -149,12 +149,15 @@ if __name__ == "__main__":
         rtplot.plot(topic="update_rate_episodic", refresh_rate=0.20, ylim_max=0.02)
 
     if train_type == 0:
-        # Batch training
-        # Train episodic memory
-        x = core50_x[train['x'].values]
-        ds_labels = np.zeros((len(e_labels), len(train)))
-        ds_labels[0] = train['instance'].values
-        ds_labels[1] = train['category'].values
+        batches = train.groupby(['session', 'instance'])
+        batches = [batch for _, batch in batches]
+        random.shuffle(batches)
+        traindf = pd.concat(batches).reset_index(drop=True)
+
+        x = core50_x[traindf['x'].values]
+        ds_labels = np.zeros((len(e_labels), len(traindf)))
+        ds_labels[0] = traindf['instance'].values
+        ds_labels[1] = traindf['category'].values
 
         g_episodic.train_egwr(
             x, ds_labels, epochs, a_threshold[0], context, parameters, regulated=0)
@@ -172,10 +175,12 @@ if __name__ == "__main__":
         if train_type == 1:  # NI
             batches = train.groupby('session')
             batches = [batch for _, batch in batches]
+            random.shuffle(batches)
         elif train_type == 2:  # NC
             batches = train.groupby('category')
             batches = [batch for _, batch in batches]
-            batches[0] = pd.concat([batches[0], batches[1]])
+            random.shuffle(batches)
+            batches[0] = pd.concat([batches[0], batches[1]]).reset_index(drop=True)
             del batches[1]
         elif train_type == 3:  # NIC
             batches = train.groupby(['session', 'instance'])
@@ -195,6 +200,7 @@ if __name__ == "__main__":
                 del batches[i]
                 del batches[i]
                 del batches[i]
+            random.shuffle(batches)
 
         # Train episodic memory
         for batch in tqdm(batches, desc='Batches', position=0):
