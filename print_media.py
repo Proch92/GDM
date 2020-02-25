@@ -26,9 +26,10 @@ def print_sns(dicts, key):
     seqs = itertools.chain(*seqs)
     df = pd.DataFrame(seqs, columns=['time', 'value'])
     df = df.sort_values(by=['time'])
-    print(df)
     plot = sns.lineplot(x='time', y='value', ci='sd', data=df, palette="deep")
+    plot.set_ylim(bottom=0.0)
     plot.figure.savefig(f"media/ni_{key}.png")
+    plot.figure.clf()
 
 
 if len(sys.argv) < 2:
@@ -52,17 +53,6 @@ for file in ni:
         dicts.append(pickle.load(f))
 
 for key in dicts[0].keys():
-    print(key)
-    seqs = [d[key] for d in dicts]
-    if len(seqs[0]) > 100:
-        idxs = range(0, len(seqs[0]), int(len(seqs[0]) / 100))
-        seqs = [list(reduce_dims(s, idxs)) for s in seqs]
-    seqs = [zip(range(len(s)), s) for s in seqs]
-    seqs = itertools.chain(*seqs)
-    df = pd.DataFrame(seqs, columns=['time', 'value'])
-    df = df.sort_values(by=['time'])
-    plot = sns.lineplot(x='time', y='value', ci='sd', data=df, palette="deep")
-    plot.figure.savefig(f"media/ni_{key}.png")
-    plot.figure.clf()
+    print_sns(dicts, key)
 
 # print_sns(dicts, 'num_nodes_semantic')
