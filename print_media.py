@@ -16,23 +16,6 @@ def reduce_dims(vec, idxs):
     return res
 
 
-def print_sns(dicts, key, close=False, bottom_lim=0.0):
-    print(key)
-    seqs = [d[key] for d in dicts]
-    if len(seqs[0]) > 100:
-        idxs = range(0, len(seqs[0]), int(len(seqs[0]) / 100))
-        seqs = [reduce_dims(s, idxs) for s in seqs]
-    seqs = [zip(range(len(s)), s) for s in seqs]
-    seqs = itertools.chain(*seqs)
-    df = pd.DataFrame(seqs, columns=['time', 'value'])
-    df = df.sort_values(by=['time'])
-    plot = sns.lineplot(x='time', y='value', ci='sd', data=df, palette="deep")
-    plot.set_ylim(bottom=bottom_lim)
-    plot.figure.savefig(f"media/ni_{key}.png")
-    if close:
-        plot.figure.clf()
-
-
 def get_dicts(files):
     dicts = []
     for file in files:
@@ -41,31 +24,26 @@ def get_dicts(files):
     return dicts
 
 
+def clip(vec, length=100):
+    if len(vec) > 100:
+        idxs = range(0, len(vec), int(len(vec) / length))
+        return reduce_dims(vec, idxs)
+    return vec
+
+
 def build_seqs(key, dicts):
+    print(key)
     seqs = [d[key] for d in dicts]
-    if len(seqs[0]) > 100:
-        idxs = range(0, len(seqs[0]), int(len(seqs[0]) / 100))
-        seqs = [reduce_dims(s, idxs) for s in seqs]
+    seqs = [clip(s) for s in seqs]
     return seqs
 
 
-if len(sys.argv) < 2:
-    print('usage: {} path'.format(sys.argv[0]))
+if len(sys.argv) < 3:
+    print('usage: {} path out_path'.format(sys.argv[0]))
     exit(0)
 path = sys.argv[1]
-
-# cumuls = glob.glob(path + 'profile_0_*')
-# ni = glob.glob(path + 'profile_1_*')
-# nc = glob.glob(path + 'profile_2_*')
-# nic = glob.glob(path + 'profile_3_*')
-
-# assert len(cumuls) > 0, "couldn't find cumulative profiling files"
-# assert len(ni) > 0, "couldn't find ni profiling files"
-# assert len(nc) > 0, "couldn't find nc profiling files"
-# assert len(nic) > 0, "couldn't find nic profiling files"
-
-# print_sns(dicts, 'num_nodes_semantic')
-####################################################################
+out_path = sys.argv[2]
+out_path = out_path.strip('/')
 
 batch = glob.glob(path + 'profile_0_*')
 ni = glob.glob(path + 'profile_1_*')
@@ -85,7 +63,7 @@ if len(batch) > 0:
     df = pd.DataFrame(seqs, columns=['time', 'neuroni', 'memoria'])
     plot = sns.lineplot(x='time', y='neuroni', ci='sd', data=df, palette="deep", hue="memoria")
     # plot.set_ylim(bottom=0.0)
-    plot.figure.savefig(f"media/batch/nneurons.png")
+    plot.figure.savefig(f"{out_path}/batch/nneurons.png")
     plot.figure.clf()
 
     # instance level
@@ -99,7 +77,7 @@ if len(batch) > 0:
     df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
     plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.8, top=1.0)
-    plot.figure.savefig(f"media/batch/whole_acc_inst.png")
+    plot.figure.savefig(f"{out_path}/batch/whole_acc_inst.png")
     plot.figure.clf()
 
     # category level
@@ -113,7 +91,7 @@ if len(batch) > 0:
     df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
     plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.8, top=1.0)
-    plot.figure.savefig(f"media/batch/whole_acc_cat.png")
+    plot.figure.savefig(f"{out_path}/batch/whole_acc_cat.png")
     plot.figure.clf()
 
 # ################################################ NI #########
@@ -131,7 +109,7 @@ if len(ni) > 0:
     df = pd.DataFrame(seqs, columns=['time', 'neuroni', 'memoria'])
     plot = sns.lineplot(x='time', y='neuroni', ci='sd', data=df, palette="deep", hue="memoria")
     # plot.set_ylim(bottom=0.0)
-    plot.figure.savefig(f"media/ni/nneurons.png")
+    plot.figure.savefig(f"{out_path}/ni/nneurons.png")
     plot.figure.clf()
 
     # #################### whole ##
@@ -146,7 +124,7 @@ if len(ni) > 0:
     df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
     plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.7, top=1.0)
-    plot.figure.savefig(f"media/ni/whole_acc_inst.png")
+    plot.figure.savefig(f"{out_path}/ni/whole_acc_inst.png")
     plot.figure.clf()
 
     # category level
@@ -160,7 +138,7 @@ if len(ni) > 0:
     df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
     plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.7, top=1.0)
-    plot.figure.savefig(f"media/ni/whole_acc_cat.png")
+    plot.figure.savefig(f"{out_path}/ni/whole_acc_cat.png")
     plot.figure.clf()
 
     # #################### first ##
@@ -175,7 +153,7 @@ if len(ni) > 0:
     df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
     plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.7, top=1.0)
-    plot.figure.savefig(f"media/ni/first_acc_inst.png")
+    plot.figure.savefig(f"{out_path}/ni/first_acc_inst.png")
     plot.figure.clf()
 
     # category level
@@ -189,7 +167,7 @@ if len(ni) > 0:
     df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
     plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.7, top=1.0)
-    plot.figure.savefig(f"media/ni/first_acc_cat.png")
+    plot.figure.savefig(f"{out_path}/ni/first_acc_cat.png")
     plot.figure.clf()
 
     # #################### seen ##
@@ -204,7 +182,7 @@ if len(ni) > 0:
     df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
     plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.7, top=1.0)
-    plot.figure.savefig(f"media/ni/seen_acc_inst.png")
+    plot.figure.savefig(f"{out_path}/ni/seen_acc_inst.png")
     plot.figure.clf()
 
     # category level
@@ -218,7 +196,7 @@ if len(ni) > 0:
     df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
     plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.7, top=1.0)
-    plot.figure.savefig(f"media/ni/seen_acc_cat.png")
+    plot.figure.savefig(f"{out_path}/ni/seen_acc_cat.png")
     plot.figure.clf()
 
 # ################################################ NC #########
@@ -236,7 +214,7 @@ if len(nc) > 0:
     df = pd.DataFrame(seqs, columns=['time', 'neuroni', 'memoria'])
     plot = sns.lineplot(x='time', y='neuroni', ci='sd', data=df, palette="deep", hue="memoria")
     # plot.set_ylim(bottom=0.0)
-    plot.figure.savefig(f"media/nc/nneurons.png")
+    plot.figure.savefig(f"{out_path}/nc/nneurons.png")
     plot.figure.clf()
 
     # #################### whole ##
@@ -251,7 +229,7 @@ if len(nc) > 0:
     df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
     plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.0, top=1.0)
-    plot.figure.savefig(f"media/nc/whole_acc_inst.png")
+    plot.figure.savefig(f"{out_path}/nc/whole_acc_inst.png")
     plot.figure.clf()
 
     # category level
@@ -265,7 +243,7 @@ if len(nc) > 0:
     df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
     plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.0, top=1.0)
-    plot.figure.savefig(f"media/nc/whole_acc_cat.png")
+    plot.figure.savefig(f"{out_path}/nc/whole_acc_cat.png")
     plot.figure.clf()
 
     # #################### first ##
@@ -280,7 +258,7 @@ if len(nc) > 0:
     df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
     plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.55, top=1.0)
-    plot.figure.savefig(f"media/nc/first_acc_inst.png")
+    plot.figure.savefig(f"{out_path}/nc/first_acc_inst.png")
     plot.figure.clf()
 
     # category level
@@ -294,7 +272,7 @@ if len(nc) > 0:
     df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
     plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.55, top=1.0)
-    plot.figure.savefig(f"media/nc/first_acc_cat.png")
+    plot.figure.savefig(f"{out_path}/nc/first_acc_cat.png")
     plot.figure.clf()
 
     # #################### seen ##
@@ -309,7 +287,7 @@ if len(nc) > 0:
     df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
     plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.7, top=1.0)
-    plot.figure.savefig(f"media/nc/seen_acc_inst.png")
+    plot.figure.savefig(f"{out_path}/nc/seen_acc_inst.png")
     plot.figure.clf()
 
     # category level
@@ -323,7 +301,7 @@ if len(nc) > 0:
     df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
     plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.7, top=1.0)
-    plot.figure.savefig(f"media/nc/seen_acc_cat.png")
+    plot.figure.savefig(f"{out_path}/nc/seen_acc_cat.png")
     plot.figure.clf()
 
 # ################################################ NIC #########
@@ -341,7 +319,7 @@ if len(nic) > 0:
     df = pd.DataFrame(seqs, columns=['time', 'neuroni', 'memoria'])
     plot = sns.lineplot(x='time', y='neuroni', ci='sd', data=df, palette="deep", hue="memoria")
     # plot.set_ylim(bottom=0.0)
-    plot.figure.savefig(f"media/nic/nneurons.png")
+    plot.figure.savefig(f"{out_path}/nic/nneurons.png")
     plot.figure.clf()
 
     # #################### whole ##
@@ -356,7 +334,7 @@ if len(nic) > 0:
     df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
     plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.0, top=1.0)
-    plot.figure.savefig(f"media/nic/whole_acc_inst.png")
+    plot.figure.savefig(f"{out_path}/nic/whole_acc_inst.png")
     plot.figure.clf()
 
     # category level
@@ -370,7 +348,7 @@ if len(nic) > 0:
     df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
     plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.0, top=1.0)
-    plot.figure.savefig(f"media/nic/whole_acc_cat.png")
+    plot.figure.savefig(f"{out_path}/nic/whole_acc_cat.png")
     plot.figure.clf()
 
     # #################### first ##
@@ -385,7 +363,7 @@ if len(nic) > 0:
     df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
     plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.5, top=1.0)
-    plot.figure.savefig(f"media/nic/first_acc_inst.png")
+    plot.figure.savefig(f"{out_path}/nic/first_acc_inst.png")
     plot.figure.clf()
 
     # category level
@@ -399,7 +377,7 @@ if len(nic) > 0:
     df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
     plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.5, top=1.0)
-    plot.figure.savefig(f"media/nic/first_acc_cat.png")
+    plot.figure.savefig(f"{out_path}/nic/first_acc_cat.png")
     plot.figure.clf()
 
     # #################### seen ##
@@ -414,7 +392,7 @@ if len(nic) > 0:
     df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
     plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.6, top=1.0)
-    plot.figure.savefig(f"media/nic/seen_acc_inst.png")
+    plot.figure.savefig(f"{out_path}/nic/seen_acc_inst.png")
     plot.figure.clf()
 
     # category level
@@ -428,5 +406,5 @@ if len(nic) > 0:
     df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
     plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.6, top=1.0)
-    plot.figure.savefig(f"media/nic/seen_acc_cat.png")
+    plot.figure.savefig(f"{out_path}/nic/seen_acc_cat.png")
     plot.figure.clf()
