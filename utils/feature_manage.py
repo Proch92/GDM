@@ -65,8 +65,8 @@ def train_extractor(dataset, epochs):
     compile_and_fit(0.01)
 
     LAYERS_TO_UNFREEZE = 10
-    vgg.trainable = True
     for freeze_layers_up_to in range(LAYERS_TO_UNFREEZE):
+        vgg.trainable = True
         for layer in vgg.layers[:-freeze_layers_up_to]:
             layer.trainable = False
 

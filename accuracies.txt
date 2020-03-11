@@ -1,0 +1,180 @@
+tc_rep
+	batch
+		inst
+			episodic
+				nan +- nan
+			semantic
+				nan +- nan
+		cat
+			episodic
+				nan +- nan
+			semantic
+				nan +- nan
+	ni
+		inst
+			episodic
+				0.985 +- 0.002
+			semantic
+				0.917 +- 0.015
+		cat
+			episodic
+				0.994 +- 0.002
+			semantic
+				0.955 +- 0.003
+	nc
+		inst
+			episodic
+				0.985 +- 0.002
+			semantic
+				0.838 +- 0.028
+		cat
+			episodic
+				0.993 +- 0.003
+			semantic
+				0.910 +- 0.025
+	nic
+		inst
+			episodic
+				0.986 +- 0.002
+			semantic
+				0.918 +- 0.013
+		cat
+			episodic
+				0.995 +- 0.001
+			semantic
+				0.958 +- 0.016
+tc_norep
+	batch
+		inst
+			episodic
+				0.992 +- 0.001
+			semantic
+				0.941 +- 0.009
+		cat
+			episodic
+				0.998 +- 0.001
+			semantic
+				0.974 +- 0.010
+	ni
+		inst
+			episodic
+				0.984 +- 0.003
+			semantic
+				0.925 +- 0.017
+		cat
+			episodic
+				0.995 +- 0.001
+			semantic
+				0.964 +- 0.008
+	nc
+		inst
+			episodic
+				0.983 +- 0.004
+			semantic
+				0.823 +- 0.037
+		cat
+			episodic
+				0.991 +- 0.004
+			semantic
+				0.904 +- 0.025
+	nic
+		inst
+			episodic
+				0.984 +- 0.002
+			semantic
+				0.936 +- 0.013
+		cat
+			episodic
+				0.995 +- 0.001
+			semantic
+				0.973 +- 0.008
+notc_rep
+	batch
+		inst
+			episodic
+				nan +- nan
+			semantic
+				nan +- nan
+		cat
+			episodic
+				nan +- nan
+			semantic
+				nan +- nan
+	ni
+		inst
+			episodic
+				0.984 +- 0.001
+			semantic
+				0.921 +- 0.010
+		cat
+			episodic
+				0.993 +- 0.001
+			semantic
+				0.970 +- 0.005
+	nc
+		inst
+			episodic
+				0.985 +- 0.001
+			semantic
+				0.900 +- 0.020
+		cat
+			episodic
+				0.994 +- 0.001
+			semantic
+				0.929 +- 0.019
+	nic
+		inst
+			episodic
+				0.973 +- 0.008
+			semantic
+				0.942 +- 0.008
+		cat
+			episodic
+				0.987 +- 0.004
+			semantic
+				0.970 +- 0.006
+notc_norep
+	batch
+		inst
+			episodic
+				0.988 +- 0.001
+			semantic
+				0.954 +- 0.007
+		cat
+			episodic
+				0.996 +- 0.001
+			semantic
+				0.979 +- 0.005
+	ni
+		inst
+			episodic
+				0.982 +- 0.002
+			semantic
+				0.907 +- 0.014
+		cat
+			episodic
+				0.992 +- 0.002
+			semantic
+				0.965 +- 0.009
+	nc
+		inst
+			episodic
+				0.986 +- 0.001
+			semantic
+				0.896 +- 0.020
+		cat
+			episodic
+				0.993 +- 0.000
+			semantic
+				0.921 +- 0.022
+	nic
+		inst
+			episodic
+				0.982 +- 0.003
+			semantic
+				0.938 +- 0.010
+		cat
+			episodic
+				0.992 +- 0.001
+			semantic
+				0.962 +- 0.013

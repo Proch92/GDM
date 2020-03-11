@@ -251,6 +251,7 @@ class EpisodicGWR(GammaGWR):
         test_accuracy = kwargs.get('test_accuracy', False)
         test_vecs = kwargs.get('ret_vecs', False)
         test_samples = ds_vectors.shape[0]
+        print(test_samples)
         bmus_index = -np.ones(test_samples)
         bmus_weight = np.zeros((test_samples, self.dimension))
         bmus_label = -np.ones((len(self.num_labels), test_samples))

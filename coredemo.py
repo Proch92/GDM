@@ -126,10 +126,10 @@ if __name__ == "__main__":
 
     parameters = config.from_file("configs/custom.json")
 
-    # context = True
-    # num_context = parameters["context_depth"]
-    context = False
-    num_context = 0
+    context = True
+    num_context = parameters["context_depth"]
+    # context = False
+    # num_context = 0
 
     # Replay parameters
     replay_size = (num_context * 2) + 1  # size of RNATs

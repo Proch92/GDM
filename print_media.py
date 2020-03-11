@@ -61,9 +61,9 @@ if len(batch) > 0:
     seqs_semantic = [zip(range(len(s)), s, labels) for s in seqs]
     seqs = itertools.chain(*seqs_episodic, *seqs_semantic)
     df = pd.DataFrame(seqs, columns=['time', 'neuroni', 'memoria'])
-    plot = sns.lineplot(x='time', y='neuroni', ci='sd', data=df, palette="deep", hue="memoria")
+    plot = sns.lineplot(x='time', y='neuroni', data=df, palette="deep", hue="memoria")
     # plot.set_ylim(bottom=0.0)
-    plot.figure.savefig(f"{out_path}/batch/nneurons.png")
+    plot.figure.savefig(f"{out_path}/batch/nneurons.png", dpi=300)
     plot.figure.clf()
 
     # instance level
@@ -74,10 +74,10 @@ if len(batch) > 0:
     labels = ["semantica"] * len(seqs[0])
     seqs_semantic = [zip(range(len(s)), s, labels) for s in seqs]
     seqs = itertools.chain(*seqs_episodic, *seqs_semantic)
-    df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
-    plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
+    df = pd.DataFrame(seqs, columns=['batch', 'accuracy', 'memoria'])
+    plot = sns.lineplot(x='batch', y='accuracy', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.8, top=1.0)
-    plot.figure.savefig(f"{out_path}/batch/whole_acc_inst.png")
+    plot.figure.savefig(f"{out_path}/batch/whole_acc_inst.png", dpi=300)
     plot.figure.clf()
 
     # category level
@@ -88,10 +88,10 @@ if len(batch) > 0:
     labels = ["semantica"] * len(seqs[0])
     seqs_semantic = [zip(range(len(s)), s, labels) for s in seqs]
     seqs = itertools.chain(*seqs_episodic, *seqs_semantic)
-    df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
-    plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
+    df = pd.DataFrame(seqs, columns=['batch', 'accuracy', 'memoria'])
+    plot = sns.lineplot(x='batch', y='accuracy', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.8, top=1.0)
-    plot.figure.savefig(f"{out_path}/batch/whole_acc_cat.png")
+    plot.figure.savefig(f"{out_path}/batch/whole_acc_cat.png", dpi=300)
     plot.figure.clf()
 
 # ################################################ NI #########
@@ -107,9 +107,9 @@ if len(ni) > 0:
     seqs_semantic = [zip(range(len(s)), s, labels) for s in seqs]
     seqs = itertools.chain(*seqs_episodic, *seqs_semantic)
     df = pd.DataFrame(seqs, columns=['time', 'neuroni', 'memoria'])
-    plot = sns.lineplot(x='time', y='neuroni', ci='sd', data=df, palette="deep", hue="memoria")
+    plot = sns.lineplot(x='time', y='neuroni', data=df, palette="deep", hue="memoria")
     # plot.set_ylim(bottom=0.0)
-    plot.figure.savefig(f"{out_path}/ni/nneurons.png")
+    plot.figure.savefig(f"{out_path}/ni/nneurons.png", dpi=300)
     plot.figure.clf()
 
     # #################### whole ##
@@ -121,10 +121,10 @@ if len(ni) > 0:
     labels = ["semantica"] * len(seqs[0])
     seqs_semantic = [zip(range(len(s)), s, labels) for s in seqs]
     seqs = itertools.chain(*seqs_episodic, *seqs_semantic)
-    df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
-    plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
+    df = pd.DataFrame(seqs, columns=['batch', 'accuracy', 'memoria'])
+    plot = sns.lineplot(x='batch', y='accuracy', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.7, top=1.0)
-    plot.figure.savefig(f"{out_path}/ni/whole_acc_inst.png")
+    plot.figure.savefig(f"{out_path}/ni/whole_acc_inst.png", dpi=300)
     plot.figure.clf()
 
     # category level
@@ -135,10 +135,10 @@ if len(ni) > 0:
     labels = ["semantica"] * len(seqs[0])
     seqs_semantic = [zip(range(len(s)), s, labels) for s in seqs]
     seqs = itertools.chain(*seqs_episodic, *seqs_semantic)
-    df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
-    plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
+    df = pd.DataFrame(seqs, columns=['batch', 'accuracy', 'memoria'])
+    plot = sns.lineplot(x='batch', y='accuracy', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.7, top=1.0)
-    plot.figure.savefig(f"{out_path}/ni/whole_acc_cat.png")
+    plot.figure.savefig(f"{out_path}/ni/whole_acc_cat.png", dpi=300)
     plot.figure.clf()
 
     # #################### first ##
@@ -150,10 +150,10 @@ if len(ni) > 0:
     labels = ["semantica"] * len(seqs[0])
     seqs_semantic = [zip(range(len(s)), s, labels) for s in seqs]
     seqs = itertools.chain(*seqs_episodic, *seqs_semantic)
-    df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
-    plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
+    df = pd.DataFrame(seqs, columns=['batch', 'accuracy', 'memoria'])
+    plot = sns.lineplot(x='batch', y='accuracy', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.7, top=1.0)
-    plot.figure.savefig(f"{out_path}/ni/first_acc_inst.png")
+    plot.figure.savefig(f"{out_path}/ni/first_acc_inst.png", dpi=300)
     plot.figure.clf()
 
     # category level
@@ -164,10 +164,10 @@ if len(ni) > 0:
     labels = ["semantica"] * len(seqs[0])
     seqs_semantic = [zip(range(len(s)), s, labels) for s in seqs]
     seqs = itertools.chain(*seqs_episodic, *seqs_semantic)
-    df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
-    plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
+    df = pd.DataFrame(seqs, columns=['batch', 'accuracy', 'memoria'])
+    plot = sns.lineplot(x='batch', y='accuracy', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.7, top=1.0)
-    plot.figure.savefig(f"{out_path}/ni/first_acc_cat.png")
+    plot.figure.savefig(f"{out_path}/ni/first_acc_cat.png", dpi=300)
     plot.figure.clf()
 
     # #################### seen ##
@@ -179,10 +179,10 @@ if len(ni) > 0:
     labels = ["semantica"] * len(seqs[0])
     seqs_semantic = [zip(range(len(s)), s, labels) for s in seqs]
     seqs = itertools.chain(*seqs_episodic, *seqs_semantic)
-    df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
-    plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
+    df = pd.DataFrame(seqs, columns=['batch', 'accuracy', 'memoria'])
+    plot = sns.lineplot(x='batch', y='accuracy', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.7, top=1.0)
-    plot.figure.savefig(f"{out_path}/ni/seen_acc_inst.png")
+    plot.figure.savefig(f"{out_path}/ni/seen_acc_inst.png", dpi=300)
     plot.figure.clf()
 
     # category level
@@ -193,10 +193,10 @@ if len(ni) > 0:
     labels = ["semantica"] * len(seqs[0])
     seqs_semantic = [zip(range(len(s)), s, labels) for s in seqs]
     seqs = itertools.chain(*seqs_episodic, *seqs_semantic)
-    df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
-    plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
+    df = pd.DataFrame(seqs, columns=['batch', 'accuracy', 'memoria'])
+    plot = sns.lineplot(x='batch', y='accuracy', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.7, top=1.0)
-    plot.figure.savefig(f"{out_path}/ni/seen_acc_cat.png")
+    plot.figure.savefig(f"{out_path}/ni/seen_acc_cat.png", dpi=300)
     plot.figure.clf()
 
 # ################################################ NC #########
@@ -212,9 +212,9 @@ if len(nc) > 0:
     seqs_semantic = [zip(range(len(s)), s, labels) for s in seqs]
     seqs = itertools.chain(*seqs_episodic, *seqs_semantic)
     df = pd.DataFrame(seqs, columns=['time', 'neuroni', 'memoria'])
-    plot = sns.lineplot(x='time', y='neuroni', ci='sd', data=df, palette="deep", hue="memoria")
+    plot = sns.lineplot(x='time', y='neuroni', data=df, palette="deep", hue="memoria")
     # plot.set_ylim(bottom=0.0)
-    plot.figure.savefig(f"{out_path}/nc/nneurons.png")
+    plot.figure.savefig(f"{out_path}/nc/nneurons.png", dpi=300)
     plot.figure.clf()
 
     # #################### whole ##
@@ -226,10 +226,10 @@ if len(nc) > 0:
     labels = ["semantica"] * len(seqs[0])
     seqs_semantic = [zip(range(len(s)), s, labels) for s in seqs]
     seqs = itertools.chain(*seqs_episodic, *seqs_semantic)
-    df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
-    plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
+    df = pd.DataFrame(seqs, columns=['batch', 'accuracy', 'memoria'])
+    plot = sns.lineplot(x='batch', y='accuracy', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.0, top=1.0)
-    plot.figure.savefig(f"{out_path}/nc/whole_acc_inst.png")
+    plot.figure.savefig(f"{out_path}/nc/whole_acc_inst.png", dpi=300)
     plot.figure.clf()
 
     # category level
@@ -240,10 +240,10 @@ if len(nc) > 0:
     labels = ["semantica"] * len(seqs[0])
     seqs_semantic = [zip(range(len(s)), s, labels) for s in seqs]
     seqs = itertools.chain(*seqs_episodic, *seqs_semantic)
-    df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
-    plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
+    df = pd.DataFrame(seqs, columns=['batch', 'accuracy', 'memoria'])
+    plot = sns.lineplot(x='batch', y='accuracy', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.0, top=1.0)
-    plot.figure.savefig(f"{out_path}/nc/whole_acc_cat.png")
+    plot.figure.savefig(f"{out_path}/nc/whole_acc_cat.png", dpi=300)
     plot.figure.clf()
 
     # #################### first ##
@@ -255,10 +255,10 @@ if len(nc) > 0:
     labels = ["semantica"] * len(seqs[0])
     seqs_semantic = [zip(range(len(s)), s, labels) for s in seqs]
     seqs = itertools.chain(*seqs_episodic, *seqs_semantic)
-    df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
-    plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
+    df = pd.DataFrame(seqs, columns=['batch', 'accuracy', 'memoria'])
+    plot = sns.lineplot(x='batch', y='accuracy', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.55, top=1.0)
-    plot.figure.savefig(f"{out_path}/nc/first_acc_inst.png")
+    plot.figure.savefig(f"{out_path}/nc/first_acc_inst.png", dpi=300)
     plot.figure.clf()
 
     # category level
@@ -269,10 +269,10 @@ if len(nc) > 0:
     labels = ["semantica"] * len(seqs[0])
     seqs_semantic = [zip(range(len(s)), s, labels) for s in seqs]
     seqs = itertools.chain(*seqs_episodic, *seqs_semantic)
-    df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
-    plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
+    df = pd.DataFrame(seqs, columns=['batch', 'accuracy', 'memoria'])
+    plot = sns.lineplot(x='batch', y='accuracy', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.55, top=1.0)
-    plot.figure.savefig(f"{out_path}/nc/first_acc_cat.png")
+    plot.figure.savefig(f"{out_path}/nc/first_acc_cat.png", dpi=300)
     plot.figure.clf()
 
     # #################### seen ##
@@ -284,10 +284,10 @@ if len(nc) > 0:
     labels = ["semantica"] * len(seqs[0])
     seqs_semantic = [zip(range(len(s)), s, labels) for s in seqs]
     seqs = itertools.chain(*seqs_episodic, *seqs_semantic)
-    df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
-    plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
+    df = pd.DataFrame(seqs, columns=['batch', 'accuracy', 'memoria'])
+    plot = sns.lineplot(x='batch', y='accuracy', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.7, top=1.0)
-    plot.figure.savefig(f"{out_path}/nc/seen_acc_inst.png")
+    plot.figure.savefig(f"{out_path}/nc/seen_acc_inst.png", dpi=300)
     plot.figure.clf()
 
     # category level
@@ -298,10 +298,10 @@ if len(nc) > 0:
     labels = ["semantica"] * len(seqs[0])
     seqs_semantic = [zip(range(len(s)), s, labels) for s in seqs]
     seqs = itertools.chain(*seqs_episodic, *seqs_semantic)
-    df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
-    plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
+    df = pd.DataFrame(seqs, columns=['batch', 'accuracy', 'memoria'])
+    plot = sns.lineplot(x='batch', y='accuracy', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.7, top=1.0)
-    plot.figure.savefig(f"{out_path}/nc/seen_acc_cat.png")
+    plot.figure.savefig(f"{out_path}/nc/seen_acc_cat.png", dpi=300)
     plot.figure.clf()
 
 # ################################################ NIC #########
@@ -317,9 +317,9 @@ if len(nic) > 0:
     seqs_semantic = [zip(range(len(s)), s, labels) for s in seqs]
     seqs = itertools.chain(*seqs_episodic, *seqs_semantic)
     df = pd.DataFrame(seqs, columns=['time', 'neuroni', 'memoria'])
-    plot = sns.lineplot(x='time', y='neuroni', ci='sd', data=df, palette="deep", hue="memoria")
+    plot = sns.lineplot(x='time', y='neuroni', data=df, palette="deep", hue="memoria")
     # plot.set_ylim(bottom=0.0)
-    plot.figure.savefig(f"{out_path}/nic/nneurons.png")
+    plot.figure.savefig(f"{out_path}/nic/nneurons.png", dpi=300)
     plot.figure.clf()
 
     # #################### whole ##
@@ -331,10 +331,10 @@ if len(nic) > 0:
     labels = ["semantica"] * len(seqs[0])
     seqs_semantic = [zip(range(len(s)), s, labels) for s in seqs]
     seqs = itertools.chain(*seqs_episodic, *seqs_semantic)
-    df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
-    plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
+    df = pd.DataFrame(seqs, columns=['batch', 'accuracy', 'memoria'])
+    plot = sns.lineplot(x='batch', y='accuracy', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.0, top=1.0)
-    plot.figure.savefig(f"{out_path}/nic/whole_acc_inst.png")
+    plot.figure.savefig(f"{out_path}/nic/whole_acc_inst.png", dpi=300)
     plot.figure.clf()
 
     # category level
@@ -345,10 +345,10 @@ if len(nic) > 0:
     labels = ["semantica"] * len(seqs[0])
     seqs_semantic = [zip(range(len(s)), s, labels) for s in seqs]
     seqs = itertools.chain(*seqs_episodic, *seqs_semantic)
-    df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
-    plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
+    df = pd.DataFrame(seqs, columns=['batch', 'accuracy', 'memoria'])
+    plot = sns.lineplot(x='batch', y='accuracy', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.0, top=1.0)
-    plot.figure.savefig(f"{out_path}/nic/whole_acc_cat.png")
+    plot.figure.savefig(f"{out_path}/nic/whole_acc_cat.png", dpi=300)
     plot.figure.clf()
 
     # #################### first ##
@@ -360,10 +360,10 @@ if len(nic) > 0:
     labels = ["semantica"] * len(seqs[0])
     seqs_semantic = [zip(range(len(s)), s, labels) for s in seqs]
     seqs = itertools.chain(*seqs_episodic, *seqs_semantic)
-    df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
-    plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
+    df = pd.DataFrame(seqs, columns=['batch', 'accuracy', 'memoria'])
+    plot = sns.lineplot(x='batch', y='accuracy', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.5, top=1.0)
-    plot.figure.savefig(f"{out_path}/nic/first_acc_inst.png")
+    plot.figure.savefig(f"{out_path}/nic/first_acc_inst.png", dpi=300)
     plot.figure.clf()
 
     # category level
@@ -374,10 +374,10 @@ if len(nic) > 0:
     labels = ["semantica"] * len(seqs[0])
     seqs_semantic = [zip(range(len(s)), s, labels) for s in seqs]
     seqs = itertools.chain(*seqs_episodic, *seqs_semantic)
-    df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
-    plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
+    df = pd.DataFrame(seqs, columns=['batch', 'accuracy', 'memoria'])
+    plot = sns.lineplot(x='batch', y='accuracy', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.5, top=1.0)
-    plot.figure.savefig(f"{out_path}/nic/first_acc_cat.png")
+    plot.figure.savefig(f"{out_path}/nic/first_acc_cat.png", dpi=300)
     plot.figure.clf()
 
     # #################### seen ##
@@ -389,10 +389,10 @@ if len(nic) > 0:
     labels = ["semantica"] * len(seqs[0])
     seqs_semantic = [zip(range(len(s)), s, labels) for s in seqs]
     seqs = itertools.chain(*seqs_episodic, *seqs_semantic)
-    df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
-    plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
+    df = pd.DataFrame(seqs, columns=['batch', 'accuracy', 'memoria'])
+    plot = sns.lineplot(x='batch', y='accuracy', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.6, top=1.0)
-    plot.figure.savefig(f"{out_path}/nic/seen_acc_inst.png")
+    plot.figure.savefig(f"{out_path}/nic/seen_acc_inst.png", dpi=300)
     plot.figure.clf()
 
     # category level
@@ -403,8 +403,8 @@ if len(nic) > 0:
     labels = ["semantica"] * len(seqs[0])
     seqs_semantic = [zip(range(len(s)), s, labels) for s in seqs]
     seqs = itertools.chain(*seqs_episodic, *seqs_semantic)
-    df = pd.DataFrame(seqs, columns=['epoch', 'accuracy', 'memoria'])
-    plot = sns.lineplot(x='epoch', y='accuracy', ci='sd', data=df, palette="deep", hue="memoria")
+    df = pd.DataFrame(seqs, columns=['batch', 'accuracy', 'memoria'])
+    plot = sns.lineplot(x='batch', y='accuracy', data=df, palette="deep", hue="memoria")
     plot.set_ylim(bottom=0.6, top=1.0)
-    plot.figure.savefig(f"{out_path}/nic/seen_acc_cat.png")
+    plot.figure.savefig(f"{out_path}/nic/seen_acc_cat.png", dpi=300)
     plot.figure.clf()
